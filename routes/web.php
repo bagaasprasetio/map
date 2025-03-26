@@ -21,6 +21,10 @@ use App\Livewire\Index;
 |
 */
 
+Route::get('/run', [AutomationController::class, 'run'])->name('run');
+Route::get('/excel', [AutomationController::class, 'index'])->name('pup-index');
+Route::post('/excel', [AutomationController::class, 'upload'])->name('pup-upload');
+
 Route::get('/', [AuthController::class, 'loginForm'])->name('loginForm');
 Route::post('/', [AuthController::class, 'login'])->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -59,7 +63,7 @@ Route::middleware(['role:sa'])->group(function() {
     Route::delete('/pangkalan/delete', [PangkalanController::class, 'pangkalanDelete'])->name('pangkalan.delete');
     Route::get('/pangkalan/getnull', [PangkalanController::class, 'getPangkalanNull'])->name('pangkalan.null');
     Route::put('/pangkalan/assignadmin', [PangkalanController::class, 'assignAdmin'])->name('pangkalan.assignadmin');
-    
+
     Route::get('/user-master', [UserController::class, 'userMaster'])->name('user.master');
     Route::get('/user/getusersubs', [UserController::class, 'getUserSubs'])->name('user.getusersubs');
     Route::get('/subs/history/{id}', [UserController::class, 'getSubsHistory'])->name('subs.history');
