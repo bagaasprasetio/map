@@ -1,6 +1,17 @@
+// Fungsi reusable untuk klik dengan delay
+async function clickWithDelay(page, selector, description, delay = 500) {
+    try {
+        await page.waitForSelector(selector, { visible: true, timeout: 2000 });
+        console.log(`✅ Mengklik tombol: ${description}`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        await page.click(selector);
+    } catch (error) {
+        console.error(`⚠️ Gagal mengklik tombol: ${description}`, error);
+    }
+}
+
+
 async function cekNik(browser, nikList, redirectBackURL) {
-
-
     const pages = await browser.pages();
     const page = pages.length > 1 ? pages[1] : await browser.newPage();
 
@@ -92,6 +103,10 @@ async function cekNik(browser, nikList, redirectBackURL) {
                                 await new Promise(resolve => setTimeout(resolve, 500)); // Delay kecil antara klik
                                 await page.click(buttonSelector);
                             }
+
+                            await clickWithDelay(page, '[data-testid="btnCheckOrder"]', '🛒 Cek Pesanan');
+                            await clickWithDelay(page, '[data-testid="btnPay"]', '💳 Proses Transaksi');
+                            await clickWithDelay(page, 'a[href="/merchant/app/verification-nik"]', '🏠 Ke Beranda');
                         } else {
                             console.log(`❌ NIK ${nik}: Transaksi tidak dapat dilakukan karena batas LPG tercapai.`);
                             await page.goto(redirectBackURL, { waitUntil: "domcontentloaded" }); // Kembali ke halaman sebelumnya
@@ -103,7 +118,6 @@ async function cekNik(browser, nikList, redirectBackURL) {
                     }
                 }
             }
-
 
             // Tunggu sampai kembali ke target URL setelah submit
             await new Promise(resolve => setTimeout(resolve, 3000));
