@@ -81,8 +81,22 @@ class AutomationController extends Controller
             'file' => 'required|mimes:xlsx,xls,csv|max:2048'
         ]);
 
-        $data = Excel::toArray(new YourExcelImport, $request->file('file'));
-        return $data;
+        $data           = Excel::toArray(new YourExcelImport, $request->file('file'));
+        $filteredData   = array_slice($data[0], 1);
+        $mergedData     = array_merge(...$filteredData);
+
+        // Hilangkan nilai null & hanya ambil yang panjangnya 16 karakter
+        $cleanedData = array_filter($mergedData, function ($value) {
+            return !is_null($value) && strlen($value) === 16;
+        });
+
+
+
+        return response()->json([
+            'filteredData'  => $filteredData,
+            'mergedData'    => $mergedData,
+            'cleanedData'   => $cleanedData,
+        ]);
 
         return redirect()->back()->with('success', 'File berhasil diunggah dan diproses.');
     }
