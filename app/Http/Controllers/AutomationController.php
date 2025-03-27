@@ -34,9 +34,9 @@ class AutomationController extends Controller
 
     }
 
-    public function run(){
-        $email  = 'pangkalangashajihalimah@gmail.com';
-        $pin    = '232323';
+    public function run(Request $request){
+        $email  = $request->pangkalan_email;
+        $pin    = $request->pangkalan_pin;
         $nikList= [
             // '32011315023', // err || invalid
             '3201131501660023', // err || Belum ini
@@ -49,7 +49,17 @@ class AutomationController extends Controller
             '3201132010700005', // los ||
         ];
 
-        $jsonNikList = escapeshellarg(json_encode($nikList));
+        $nikList2= [
+            '3201035710840011', 
+            '3201034706840012', 
+            '3271016505690014', 
+            '3201130910460001', 
+            '3271014107650129', 
+            '3201135205660003', 
+            '3201045608780001'
+        ];
+
+        $jsonNikList = escapeshellarg(json_encode($nikList2));
         $scriptPath = base_path('resources/js/pup-parent.cjs'); // Lokasi script Puppeteer
 
         $output = shell_exec("node $scriptPath $email $pin $jsonNikList 2>&1");

@@ -134,7 +134,6 @@
             </div>
         </div>
         @endif
-
     </div>
 </div>
 
@@ -167,7 +166,7 @@
                         </div>
                         <div id="pangkalan_pin_error" class="text-danger text-sm d-none"></div>
                     </div>
-                    <div class="col-12 border border-gray border-3 my-3"></div>
+                    <!-- <div class="col-12 border border-gray border-3 my-3"></div>
                     <div class="col-12">
                         <label for="inputEmail4" class="form-label">Jumlah Input</label>
                         <input type="text" class="form-control" id="input_transaction" name="input_transaction" placeholder="Ketik di sini">
@@ -184,7 +183,7 @@
                             <label class="form-check-label">Usaha Mikro (UM)</label>
                         </div>
                         <div id="nik_type_error" class="text-danger text-sm d-none"></div>
-                    </div>
+                    </div> !-->
                 </form>
             </div>
             <div class="modal-footer d-flex justify-content-between">
@@ -269,26 +268,28 @@
             e.preventDefault();
             let nikType = $("input[name='nik_type']:checked").val();
 
-            if (!nikType) {
+            /* if (!nikType) {
                 Swal.fire("Error", "Pilih tipe NIK terlebih dahulu", "error");
                 return;
-            }
+            } */
 
             $('.is-invalid').each(function() {
                 $(this).removeClass('is-invalid');
                 $('#' + this.id + '_error').addClass('d-none').text('');
             });
 
+            Swal.fire("Harap tunggu", "Bot sedang berjalan, mohon tidak mengganggu jalannya bot", "info");
+
             $.ajax({
-                url: "{{ route('automation.login') }}",
-                type: "post",
+                url: "{{ route('run') }}",
+                type: "get",
                 data: {
                     pangkalan_email: $("#pangkalan_email").val(),
                     pangkalan_pin: $("#pangkalan_pin").val(),
-                    input_transaction: $("#input_transaction").val()
+                    //input_transaction: $("#input_transaction").val()
                 },
                 success: function(response){
-                    Swal.fire("Harap tunggu", "Bot sedang berjalan, mohon tidak mengganggu jalannya bot", "info");
+                    Swal.fire("Berhasil", "Bot selesai membuat transaksi", "success");
 
                     /* $.ajax({
                         url: "{{ route('transaksi.add') }}",
@@ -320,7 +321,6 @@
                         });
 
                     }
-                
                 }
             });
         });

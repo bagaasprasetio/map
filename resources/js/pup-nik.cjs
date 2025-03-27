@@ -1,6 +1,5 @@
 async function cekNik(browser, nikList, redirectBackURL) {
 
-
     const pages = await browser.pages();
     const page = pages.length > 1 ? pages[1] : await browser.newPage();
 
