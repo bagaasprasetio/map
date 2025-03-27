@@ -20,7 +20,6 @@ class YourExcelImport implements ToCollection
         foreach ($collection as $row)
         {
             return [
-                //'no'                => $row['No'],
                 'UM1'        => $row['UM 1'],
                 'UM2'        => $row['UM 2'],
                 'UM3'        => $row['UM 3'],
