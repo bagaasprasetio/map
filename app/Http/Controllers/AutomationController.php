@@ -37,6 +37,8 @@ class AutomationController extends Controller
     public function run(Request $request){
         $email  = $request->pangkalan_email;
         $pin    = $request->pangkalan_pin;
+
+        // ini akan terganti dengan kode dari fun upload, dan jika sudah akan dipakai pada fun automationLogin
         $nikList= [
             // '32011315023', // err || invalid
             '3201131501660023', // err || Belum ini
@@ -50,12 +52,12 @@ class AutomationController extends Controller
         ];
 
         $nikList2= [
-            '3201035710840011', 
-            '3201034706840012', 
-            '3271016505690014', 
-            '3201130910460001', 
-            '3271014107650129', 
-            '3201135205660003', 
+            '3201035710840011',
+            '3201034706840012',
+            '3271016505690014',
+            '3201130910460001',
+            '3271014107650129',
+            '3201135205660003',
             '3201045608780001'
         ];
 
@@ -81,21 +83,26 @@ class AutomationController extends Controller
             'file' => 'required|mimes:xlsx,xls,csv|max:2048'
         ]);
 
+        //  ganti line 75 - 86 ke functun run di line 42 - 52
+        $inputLoop = 4;
         $data           = Excel::toArray(new YourExcelImport, $request->file('file'));
-        $filteredData   = array_slice($data[0], 1);
-        $mergedData     = array_merge(...$filteredData);
-
+        // Hilangkan baris pertama (biasanya header)
+        $filteredData = array_slice($data[0], 1);
+        // Transpose array agar membaca data secara vertikal
+        $transposedData = array_map(null, ...$filteredData);
+        $mergedData     = array_merge(...$transposedData);
         // Hilangkan nilai null & hanya ambil yang panjangnya 16 karakter
         $cleanedData = array_filter($mergedData, function ($value) {
             return !is_null($value) && strlen($value) === 16;
         });
-
-
+        $selectedData = array_slice($cleanedData, 0, $inputLoop);
 
         return response()->json([
             'filteredData'  => $filteredData,
+            'transposedData'=> $transposedData,
             'mergedData'    => $mergedData,
             'cleanedData'   => $cleanedData,
+            'selectedData'  => $selectedData,
         ]);
 
         return redirect()->back()->with('success', 'File berhasil diunggah dan diproses.');
