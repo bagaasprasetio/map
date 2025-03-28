@@ -37,6 +37,8 @@ class AutomationController extends Controller
     public function run(){
         $email  = 'pangkalangashajihalimah@gmail.com';
         $pin    = '232323';
+
+        // jika sudah di update dari fun upload, masukan fun ini ke fun atuomationLogin
         $nikList= [
             // '32011315023', // err || invalid
             '3201131501660023', // err || Belum ini
@@ -71,21 +73,26 @@ class AutomationController extends Controller
             'file' => 'required|mimes:xlsx,xls,csv|max:2048'
         ]);
 
+        //  ganti line 75 - 86 ke functun run di line 42 - 52
+        $inputLoop = 4;
         $data           = Excel::toArray(new YourExcelImport, $request->file('file'));
-        $filteredData   = array_slice($data[0], 1);
-        $mergedData     = array_merge(...$filteredData);
-
+        // Hilangkan baris pertama (biasanya header)
+        $filteredData = array_slice($data[0], 1);
+        // Transpose array agar membaca data secara vertikal
+        $transposedData = array_map(null, ...$filteredData);
+        $mergedData     = array_merge(...$transposedData);
         // Hilangkan nilai null & hanya ambil yang panjangnya 16 karakter
         $cleanedData = array_filter($mergedData, function ($value) {
             return !is_null($value) && strlen($value) === 16;
         });
-
-
+        $selectedData = array_slice($cleanedData, 0, $inputLoop);
 
         return response()->json([
             'filteredData'  => $filteredData,
+            'transposedData'=> $transposedData,
             'mergedData'    => $mergedData,
             'cleanedData'   => $cleanedData,
+            'selectedData'  => $selectedData,
         ]);
 
         return redirect()->back()->with('success', 'File berhasil diunggah dan diproses.');
