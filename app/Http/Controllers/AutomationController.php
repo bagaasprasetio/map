@@ -59,7 +59,7 @@ class AutomationController extends Controller
             '3201045608780001'
         ];
 
-        $jsonNikList = escapeshellarg(json_encode($nikList2));
+        $jsonNikList = escapeshellarg(json_encode($nikList));
         $scriptPath = base_path('resources/js/pup-parent.cjs'); // Lokasi script Puppeteer
 
         $output = shell_exec("node $scriptPath $email $pin $jsonNikList 2>&1");
