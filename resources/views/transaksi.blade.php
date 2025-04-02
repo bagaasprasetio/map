@@ -18,21 +18,29 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                <table class="table table-bordered" id="transaction_table" width="100%" cellspacing="0">
                     <thead>
                         <tr>
                             <th>No</th>
                             <th>Tanggal Transaksi</th>
+                            <th>NIK</th>
+                            <th>Tipe NIK</th>
+                            <th>Status Transaksi</th>
+                            <th>Admin Pangkalan</th>
                             <th>Nama Pangkalan</th>
-                            <th>Total Transaksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td>1</td>
                             <td>20 April 2025, 15:03</td>
-                            <td>Edinburgh</td>
-                            <td>44</td>
+                            <td>3271 0413 0765 6754</td>
+                            <td>RT</td>
+                            <td>
+                                <span class='badge badge-success'>Berhasil</span>
+                            </td>
+                            <td>Hj. Halimas</td>
+                            <td>Pangkalan Gas Haji Halimah</td>
                         </tr>
                     </tbody>
                 </table>

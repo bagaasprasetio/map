@@ -14,8 +14,12 @@ async function clickWithDelay(page, selector, description, delay = 500) {
 async function cekNik(browser, nikList, redirectBackURL) {
     const pages = await browser.pages();
     const page = pages.length > 1 ? pages[1] : await browser.newPage();
+    let validNikList = [];
 
     for (let nik of nikList) {
+
+        if(validNikList.length >= inputTrx) break; // Stop jika jumlah NIK valid sudah cukup
+
         try {
             nik = nik?.toString().trim(); // Pastikan `nik` string dan trim whitespace
 
@@ -107,6 +111,7 @@ async function cekNik(browser, nikList, redirectBackURL) {
                             await clickWithDelay(page, '[data-testid="btnCheckOrder"]', '🛒 Cek Pesanan');
                             await clickWithDelay(page, '[data-testid="btnPay"]', '💳 Proses Transaksi');
                             await clickWithDelay(page, 'a[href="/merchant/app/verification-nik"]', '🏠 Ke Beranda');
+                            validNikList.push(nik);
                         } else {
                             console.log(`❌ NIK ${nik}: Transaksi tidak dapat dilakukan karena batas LPG tercapai.`);
                             await page.goto(redirectBackURL, { waitUntil: "domcontentloaded" }); // Kembali ke halaman sebelumnya
@@ -130,6 +135,7 @@ async function cekNik(browser, nikList, redirectBackURL) {
     }
 
     await page.close();
+    return validNikList;
 }
 
 module.exports = { cekNik };

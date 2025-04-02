@@ -6,17 +6,24 @@ use App\Imports\YourExcelImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Models\Transaksi;
 
 class AutomationController extends Controller
 {
-    public function automationLogin(Request $request){
+
+    public function automationAttrCheck(Request $request){
         $validator = Validator::make($request->all(), [
             'pangkalan_pin' => 'required|numeric',
-            'input_transaction' => 'required'
+            'input_transaction' => 'required',
+            'excel_file' => 'required|file|mimes:xlsx,xls|max:2048'
         ], [
             'input_transaction.required' => 'Jumlah inputan wajib diisi',
             'pangkalan_pin.required' => 'PIN akun merchant wajib diisi',
-            'pangkalan_pin.numeric' => 'PIN akun merchant wajib angka'
+            'pangkalan_pin.numeric' => 'PIN akun merchant wajib angka',
+            'excel_file.required' => 'File excel belum dimasukkan',
+            'excel_file.file' => 'File excel tidak valid',
+            'excel_file.mimes' => 'File excel harus berformat .xlsx atau .xls',
+            'excel_file.max' => 'File excel melebihi batas maksimal 2MB'
         ]);
 
         if($validator->fails()){
@@ -25,6 +32,13 @@ class AutomationController extends Controller
             ], 400);
         }
 
+        return response()->json([
+            'status' => 'success'
+        ], 200);
+    }
+
+    public function automationLogin(Request $request){
+
         $email = $request->pangkalan_email;
         $pin = $request->pangkalan_pin;
 
@@ -32,42 +46,57 @@ class AutomationController extends Controller
         $output = shell_exec($cmd . " 2>&1");
         dd($output);
 
+        return response()->json([
+            'status' => 'success'
+        ], 200);
+
     }
 
     public function run(Request $request){
         $email  = $request->pangkalan_email;
         $pin    = $request->pangkalan_pin;
+        $inputTrx = $request->input_transaction;
+        $nikType = $request->nik_type;
 
-        // ini akan terganti dengan kode dari fun upload, dan jika sudah akan dipakai pada fun automationLogin
-        $nikList= [
-            // '32011315023', // err || invalid
-            '3201131501660023', // err || Belum ini
-            '3201131501650023', // err ||
-            // '32012215031', // err || invalid
-            '3175035411820010', // pop || Sudah
-            '3201306402890003', // los ||
-            '3201131612950006', // err || ini
-            '3201132010890001', // err || ini
-            '3201132010700005', // los ||
-        ];
+        $data           = Excel::toArray(new YourExcelImport, $request->file('excel_file'));
+        // Hilangkan baris pertama (biasanya header)
+        $filteredData = array_slice($data[0], 0);
+        // Transpose array agar membaca data secara vertikal
+        $transposedData = array_map(null, ...$filteredData);
+        $mergedData     = array_merge(...$transposedData);
+        // Hilangkan nilai null & hanya ambil yang panjangnya 16 karakter
+        $cleanedData = array_filter($mergedData, function ($value) {
+            return !is_null($value) && strlen($value) === 16;
+        });
+        //$selectedData = array_slice($cleanedData, 0, $inputTrx);
 
-        $nikList2= [
-            '3201035710840011',
-            '3201034706840012',
-            '3271016505690014',
-            '3201130910460001',
-            '3271014107650129',
-            '3201135205660003',
-            '3201045608780001'
-        ];
-
-        $jsonNikList = escapeshellarg(json_encode($nikList));
+        $jsonNikList = escapeshellarg(json_encode(array_values($cleanedData)));
         $scriptPath = base_path('resources/js/pup-parent.cjs'); // Lokasi script Puppeteer
 
-        $output = shell_exec("node $scriptPath $email $pin $jsonNikList 2>&1");
-        // dd($output);
+        $output = shell_exec("node $scriptPath $email $pin $jsonNikList $inputTrx 2>&1");
+        dd($output);
+        $outputArray = json_decode($output, true);
+
+        if (!is_array($outputArray) || empty($outputArray['valid_nik'])) {
+            return response()->json(['message' => 'No valid NIK found'], 400);
+        }
+
+        $validNik = array_slice($outputArray['valid_nik'], 0, $inputTrx);
+        //dd($output);
+
+        $transactions = [];
+        foreach ($validNik as $nik) {
+            $transactions[] = [
+                'nik' => $nik,
+                'status' => 'valid'
+            ];
+        }
+
+        //Transaksi::insert($transactions);
+
         return response()->json([
             'message'   => 'success',
+            'transactions' => $transactions,
             'output'    => $output,
         ]);
     }
@@ -87,7 +116,7 @@ class AutomationController extends Controller
         $inputLoop = 4;
         $data           = Excel::toArray(new YourExcelImport, $request->file('file'));
         // Hilangkan baris pertama (biasanya header)
-        $filteredData = array_slice($data[0], 1);
+        $filteredData = array_slice($data[0], 0);
         // Transpose array agar membaca data secara vertikal
         $transposedData = array_map(null, ...$filteredData);
         $mergedData     = array_merge(...$transposedData);

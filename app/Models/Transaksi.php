@@ -13,7 +13,7 @@ class Transaksi extends Model
 
     protected $fillable = [
         'transaction_date',
-        'transaction_total',
+        'nik',
         'nik_type',
         'transaction_status',
         'user_id',

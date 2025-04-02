@@ -63,14 +63,11 @@
                     <div class="col-6">
                         <i class="fas fa-robot fa-3x text-gray-400 mb-3"></i>
                         <h3 class="fw-bold text-gray-700 mb-1">Mulai input data otomatis</h3>
-                        <p>Masukkan file excel untuk melanjutkan</p>
                         <div>
                             <form>
-                                <div class="mb-3">
-                                    <input class="form-control" type="file" id="formFile">
-                                </div>
+                                
                             </form>
-                            <button class="btn btn-primary shadow-sm mt-2" id="startBotBtn">Mulai Eksekusi</button>
+                            <button class="btn btn-primary shadow-sm mt-2" id="startBotBtn">Mulai Input Data</button>
                         </div>
                     </div>
                 </div>
@@ -145,19 +142,19 @@
             <div class="modal-header">
                 <div>
                     <h5 class="modal-title" id="exampleModalLabel">Sebelum dimulai...</h5>
-                    <span class="mb-0">Silahkan masukkan PIN dan pastikan email sesuai dengan akun merchant untuk akses ke portal subsiditepatlpg.mypertamina.id</span>
+                    <span class="mb-0">Silahkan masukkan PIN akun merchant dan pastikan email sudah sesuai dengan akun merchant untuk akses ke portal subsiditepatlpg.mypertamina.id</span>
                 </div>
                 <button class="close" type="button" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">×</span>
                 </button>
             </div>
             <div class="modal-body">
-                <form class="row g-3">
+                <form id="formBotAttr" class="row g-3">
                     <div class="col-12">
                         <label for="inputEmail4" class="form-label">Email</label>
-                        <input type="text" class="form-control" id="pangkalan_email" placeholder="Ketik di sini" disabled>
+                        <input type="text" class="form-control" id="pangkalan_email" name="pangkalan_email" placeholder="Ketik di sini" readonly>
                     </div>
-                    <div class="col-12 mt-2">
+                    <div class="col-12 mt-3">
                         <label for="inputEmail4" class="form-label">PIN</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="pangkalan_pin" name="pangkalan_pin" placeholder="Ketik di sini">
@@ -169,19 +166,26 @@
                     </div>
                     <div class="col-12 border border-gray border-3 my-3"></div>
                     <div class="col-12">
-                        <label for="inputEmail4" class="form-label">Jumlah Input</label>
+                        <label for="inputEmail4" class="form-label">Masukkan file excel berisi NIK</label>
+                        <input class="form-control" type="file" id="excel_file" name="excel_file">
+                        <div id="excel_file_error" class="text-danger text-sm d-none"></div>
+                    </div>
+                    <div class="col-12 mt-3">
+                        <label for="inputEmail4" class="form-label">Jumlah Input Transaksi</label>
                         <input type="text" class="form-control" id="input_transaction" name="input_transaction" placeholder="Ketik di sini">
                         <div id="input_transaction_error" class="text-danger text-sm d-none"></div>
                     </div>
-                    <div class="col-12 mt-2">
+                    <div class="col-12 mt-3">
                         <label for="inputEmail4" class="form-label">Pilih Tipe NIK</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="nik_type" value="rt">
-                            <label class="form-check-label">Rumah Tangga (RT)</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="nik_type" value="um">
-                            <label class="form-check-label">Usaha Mikro (UM)</label>
+                        <div class="d-flex">
+                            <div class="form-check mr-4">
+                                <input class="form-check-input" type="radio" name="nik_type" value="rt">
+                                <label class="form-check-label">Rumah Tangga (RT)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="nik_type" value="um">
+                                <label class="form-check-label">Usaha Mikro (UM)</label>
+                            </div>
                         </div>
                         <div id="nik_type_error" class="text-danger text-sm d-none"></div>
                     </div>
@@ -268,6 +272,11 @@
         $('#startAutomationBtn').on('click', function(e){
             e.preventDefault();
             let nikType = $("input[name='nik_type']:checked").val();
+            let formData = new FormData($('#formBotAttr')[0]);
+            // let excelFile = $('#excel_file')[0].files[0];
+            // formData.append("file", excelFile);
+
+            //console.log([...formData.entries()]);
 
             if (!nikType) {
                 Swal.fire("Error", "Pilih tipe NIK terlebih dahulu", "error");
@@ -280,15 +289,59 @@
             });
 
             $.ajax({
-                url: "{{ route('automation.login') }}",
+                url: "{{ route('automation.check') }}",
                 type: "post",
-                data: {
-                    pangkalan_email: $("#pangkalan_email").val(),
-                    pangkalan_pin: $("#pangkalan_pin").val(),
-                    input_transaction: $("#input_transaction").val()
-                },
+                contentType: false,  // Harus false biar jQuery gak ubah data
+                processData: false,  // Harus false biar FormData dikirim beneran
+                data: formData,
                 success: function(response){
-                    Swal.fire("Harap tunggu", "Bot sedang berjalan, mohon tidak mengganggu jalannya bot", "info");
+                    Swal.fire({
+                        html: `
+                            <div class="spinner-container" style="margin-bottom: 10px;">
+                                <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                            </div>
+                            <span>Bot sedang dalam proses menginput data ke server. Mohon untuk tidak menganggu jalannya bot.</span>
+                        `,
+                        title: "Sedang Memproses",
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false
+                    });
+
+                    executeBot(formData);
+                },
+                error: function(xhr){
+                    if (xhr.status === 400){
+                        let errors = xhr.responseJSON.message;
+
+                        $('.is-invalid').each(function() {
+                            $(this).removeClass('is-invalid');
+                            $('#' + this.id + '_error').addClass('d-none').text('');
+                        });
+
+                        $.each(errors, function(field, messages) {
+                            $('#' + field).addClass('is-invalid'); 
+                            $('#' + field + '_error').removeClass('d-none').text(messages[0]);     
+                        });
+
+                    }
+                }
+            });
+        });
+
+        function executeBot(formData){
+            $.ajax({
+                url: "{{ route('automation.run') }}",
+                type: "post",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response){
+                    Swal.fire("Berhasil", "Bot berhasil input data, silahkan cek ke website target", "success");
+                    $("#startBotModal").modal('hide');
+                    $('#formBotAttr')[0].reset();
 
                     /* $.ajax({
                         url: "{{ route('transaksi.add') }}",
@@ -306,24 +359,10 @@
                     }); */
                 },
                 error: function(xhr){
-                    if (xhr.status === 400){
-                        let errors = xhr.responseJSON.message;
-
-                        $('.is-invalid').each(function() {
-                            $(this).removeClass('is-invalid');
-                            $('#' + this.id + '_error').addClass('d-none').text('');
-                        });
-
-                        $.each(errors, function(field, messages) {
-                            $('#' + field).addClass('is-invalid'); 
-                            $('#' + field + '_error').removeClass('d-none').text(messages[0]);     
-                        });
-
-                    }
-                
+                    Swal.fire("Gagal!", "Terjadi kesalahan saat menjalankan bot.", "error");
                 }
             });
-        });
+        }
     });
 </script>
 
