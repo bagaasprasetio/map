@@ -10,8 +10,7 @@ async function clickWithDelay(page, selector, description, delay = 500) {
     }
 }
 
-
-async function cekNik(browser, nikList, redirectBackURL) {
+async function cekNik(browser, nikList, redirectBackURL, inputTrx, type) {
     const pages = await browser.pages();
     const page = pages.length > 1 ? pages[1] : await browser.newPage();
     let validNikList = [];
@@ -42,6 +41,12 @@ async function cekNik(browser, nikList, redirectBackURL) {
 
             // Tunggu modal muncul atau timeout setelah 3 detik
             let isModalFound = false;
+            // Definisikan pesan yang ingin dicocokkan
+            const messages = {
+                notRegistered: "NIK belum terdaftar",
+                registered: "NIK Terdaftar",
+                updateRequired: "Pelanggan Usaha Mikro yang sudah terdaftar perlu memperbarui informasi jenis usaha."
+            };
             try {
                 await page.waitForSelector('.mantine-Modal-body.mantine-1q36a81', { timeout: 3000 });
 
@@ -51,11 +56,74 @@ async function cekNik(browser, nikList, redirectBackURL) {
                 for (let modal of modals) {
                     const text = await page.evaluate(el => el.innerText, modal);
 
-                    if (text.includes("NIK belum terdaftar")) {
+                    if (text.includes(messages.notRegistered)) {
                         console.log(`🔴 NIK ${nik}: Belum Terdaftar`);
                         isModalFound = true;
-                    } else if (text.includes("NIK Terdaftar")) {
+                    } else if (text.includes(messages.registered)) {
                         console.log(`🟢 NIK ${nik}: Terdaftar`);
+
+                        let radioButton = await modal.$('[data-testid="radio-Usaha Mikro"]');
+                        if (!radioButton) {
+                            radioButton = await modal.$('[data-testid="radio-Rumah Tangga"]');
+                        }
+
+                        if (radioButton) {
+                            console.log(`✅ Radio button ditemukan, mencoba klik...`);
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                            await page.evaluate(radio => radio.click(), radioButton);
+                            await new Promise(resolve => setTimeout(resolve, 500));
+
+                            const continueButton = await modal.$('[data-testid="btnContinueTrx"]');
+                            await page.evaluate(button => button.click(), continueButton);
+                            console.log(`✅ Radio button "Usaha Mikro" berhasil dipilih.`);
+
+                            console.log(`🟠 type adalah ${type}`);
+                            if (type == 'UM') {
+                                console.log(`🟠 type adalah ${type}: Exec if`);
+                                // Tunggu modal baru muncul setelah klik continueButton
+                                await page.waitForSelector('.mantine-Modal-body.mantine-1q36a81', { timeout: 3000 });
+                                // Ambil kembali modal yang baru muncul
+                                let newModals = await page.$$('.mantine-Modal-body.mantine-1q36a81');
+
+                                for (let newModal of newModals) {
+                                    let newText = await page.evaluate(el => el.innerText, newModal);
+
+                                    if (newText.includes(messages.updateRequired)) {
+                                        console.log(`🟠 Dari NIK Terdaftar ${nik}: Pelanggan perlu memperbarui informasi jenis usaha.`);
+
+                                        // Ambil semua tombol dalam modal ini
+                                        const buttons = await newModal.$$('button');
+                                        const buttonCount = buttons.length;
+
+                                        if (buttonCount === 3) {
+                                            console.log(`🟠 Dari NIK Terdaftar ${nik}: (3 tombol: "Perbarui Data Pelanggan", "Lewati, Lanjut Transaksi", "Kembali").`);
+
+                                            // Tunggu selector tombol "Lewati, Lanjut Transaksi"
+                                            await page.waitForSelector('.styles_root__6_rRr.styles_medium__7QTIz.styles_outlined__khSXF.styles_primary__pVpF_', { visible: true, timeout: 3000 });
+
+                                            // Pilih tombol berdasarkan kelasnya dan klik
+                                            const skipButton = await newModal.$('.styles_root__6_rRr.styles_medium__7QTIz.styles_outlined__khSXF.styles_primary__pVpF_');
+
+                                            if (skipButton) {
+                                                console.log(`✅ Tombol "Lewati, Lanjut Transaksi" ditemukan, mencoba klik...`);
+                                                await new Promise(resolve => setTimeout(resolve, 500));  // Delay sebelum klik
+                                                await skipButton.click();
+                                                console.log(`✅ Tombol "Lewati, Lanjut Transaksi" berhasil dipilih.`);
+                                            } else {
+                                                console.log(`⚠️ Tombol "Lewati, Lanjut Transaksi" tidak ditemukan.`);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                        } else {
+                            console.log(`⚠️ Radio button "Usaha Mikro" tidak ditemukan.`);
+                        }
+
+                        // isModalFound = true; // Diletakkan setelah semua proses dalam kondisi selesai
+                    } else if (text.includes(messages.updateRequired)) {
+                        console.log(`🟢 NIK ${nik}: perlu memperbarui informasi`);
                         isModalFound = true;
                     }
                 }
@@ -63,8 +131,8 @@ async function cekNik(browser, nikList, redirectBackURL) {
                 console.log(`⚠️ NIK ${nik}: Tidak ada modal terdeteksi.`);
             }
 
-            // Jika modal tidak ditemukan, lanjut ke halaman selanjutnya
-            if (!isModalFound) {
+             // Jika modal tidak ditemukan, lanjut ke halaman selanjutnya
+             if (!isModalFound) {
                 console.log(`➡️ NIK ${nik}: Tidak ada modal, lanjut ke halaman berikutnya.`);
                 // await page.goto(nextPageURL, { waitUntil: "domcontentloaded" });
 
@@ -76,7 +144,8 @@ async function cekNik(browser, nikList, redirectBackURL) {
                     const pageText = document.body.innerText;
                     return pageText.includes("Tidak dapat transaksi karena telah melebihi batas kewajaran pembelian LPG 3 kg bulan ini.") ||
                            pageText.includes("Tidak dapat transaksi karena telah melebihi batas kewajaran pembelian LPG 3 kg bulan ini untuk NIK yang terdaftar pada nomor KK yang sama.") ||
-                           pageText.includes("Tidak dapat transaksi karena telah melebihi batas kewajaran pembelian LPG 3 kg hari ini. (10 tabung).");
+                           pageText.includes("Tidak dapat transaksi karena telah melebihi batas kewajaran pembelian LPG 3 kg hari ini. (10 tabung).") ||
+                           pageText.includes("Tidak dapat transaksi, stok tabung yang dapat dijual kosong. Silakan lakukan penebusan.");
                 });
 
                 if (!isRestricted) {
@@ -94,7 +163,7 @@ async function cekNik(browser, nikList, redirectBackURL) {
                             console.log(`🟢 NIK ${nik}: Kategori ditemukan: ${isRumahTangga ? "Rumah Tangga" : "Usaha Mikro"}`);
 
                             // Tunggu hingga tombol muncul
-                            await page.waitForSelector('[data-testid="actionIcon2"]', { visible: true, timeout: 2000 });
+                            await page.waitForSelector('[data-testid="actionIcon2"]', { visible: true, timeout: 5000 });
 
                             // Klik tombol sesuai kategori
                             const buttonSelector = '[data-testid="actionIcon2"]';
@@ -108,10 +177,10 @@ async function cekNik(browser, nikList, redirectBackURL) {
                                 await page.click(buttonSelector);
                             }
 
-                            await clickWithDelay(page, '[data-testid="btnCheckOrder"]', '🛒 Cek Pesanan');
-                            await clickWithDelay(page, '[data-testid="btnPay"]', '💳 Proses Transaksi');
-                            await clickWithDelay(page, 'a[href="/merchant/app/verification-nik"]', '🏠 Ke Beranda');
-                            validNikList.push(nik);
+                            // await clickWithDelay(page, '[data-testid="btnCheckOrder"]', '🛒 Cek Pesanan');
+                            // await clickWithDelay(page, '[data-testid="btnPay"]', '💳 Proses Transaksi');
+                            // await clickWithDelay(page, 'a[href="/merchant/app/verification-nik"]', '🏠 Ke Beranda');
+                            // validNikList.push(nik);
                         } else {
                             console.log(`❌ NIK ${nik}: Transaksi tidak dapat dilakukan karena batas LPG tercapai.`);
                             await page.goto(redirectBackURL, { waitUntil: "domcontentloaded" }); // Kembali ke halaman sebelumnya
