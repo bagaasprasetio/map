@@ -144,6 +144,9 @@ return [
         // 'store' => 'redis',
     ],
 
+    'url_verification_nik' => env('URL_VERIFICATION_NIK', 'default_url'),
+
+
     /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers

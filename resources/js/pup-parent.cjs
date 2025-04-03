@@ -6,10 +6,13 @@ const { cekNik } = require('./pup-nik.cjs');
     const email     = process.argv[2];
     const password  = process.argv[3];
     const nikList   = JSON.parse(process.argv[4]); // JSON berisi array NIK
-    const inputTrx = parseInt(process.argv[5], 10);
+    const type      = process.argv[5];
+    const URL       = process.argv[6];
+    const inputTrx  = parseInt(process.argv[7], 10);
+
 
     const browser = await login(email, password);
-    await cekNik(browser, nikList, 'https://subsiditepatlpg.mypertamina.id/merchant/app/verification-nik', inputTrx);
+    await cekNik(browser, nikList, URL, inputTrx, type);
 
     await browser.close();
 })();

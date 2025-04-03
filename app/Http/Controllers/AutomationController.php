@@ -61,6 +61,10 @@ class AutomationController extends Controller
         $inputTrx = $request->input_transaction;
         $nikType = $request->nik_type;
 
+        $message = [
+            'Pelanggan Usaha Mikro yang sudah terdaftar perlu memperbarui informasi jenis usaha. Pelanggan diwajibkan untuk melengkapi Nomor Induk Berusaha (NIB) paling lambat 30 April 2025. Silahkan melanjutkan ke tahapan berikutnya untuk dapat melakukan transaksi.'
+        ];
+
         $data           = Excel::toArray(new YourExcelImport, $request->file('excel_file'));
         // Hilangkan baris pertama (biasanya header)
         $filteredData = array_slice($data[0], 0);
@@ -146,6 +150,37 @@ class AutomationController extends Controller
             return !is_null($value) && strlen($value) === 16;
         });
         $selectedData = array_slice($cleanedData, 0, $inputLoop);
+
+        $scriptPath = base_path('resources/js/pup-parent.cjs'); // Lokasi script Puppeteer
+
+
+        // $listNikUM = [
+        //     '3201135502690001', // los
+        //     '3276016101940002', // pop Perbarui Data Pelanggan + $message -> Kembali
+        //     '3271012402770004', // pop nik terdafatat -> UM -> Lanjut -> Perbarui Data Pelanggan + $message -> Lewati, Lanjut Transaksi -> proses qty
+        //     '3174015502670005', // pop nik terdafatat -> UM -> Lanjut -> proses qty
+        //     '3201135709690008', // pop Perbarui Data Pelanggan + $message -> Lewati, Lanjut Transaksi -> proses qty
+        // ];
+
+        // $listNikRT = [
+        //     '3201045806050004', // los
+        //     '3271016407850006', // pop nik terdafatat -> UM -> Lanjut -> proses qty
+        // ];
+
+
+        $email          = 'rikalikal97@gmail.com';
+        $pin            = '232323';
+        $type           = 'UM'; // UM atau RT
+        $URL            = config('app.url_verification_nik');
+        $jsonNikList    = escapeshellarg(json_encode(array_values($cleanedData)));
+
+        $output = shell_exec("node $scriptPath $email $pin $jsonNikList $type $URL 2>&1");
+        // return $URL;
+
+        return response()->json([
+            'message'       => 'success',
+            'output'        => $output,
+        ]);
 
         return response()->json([
             'filteredData'  => $filteredData,
