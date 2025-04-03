@@ -10,6 +10,7 @@ use App\Models\Transaksi;
 use App\Models\Pangkalan;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AutomationController extends Controller
 {
@@ -42,8 +43,8 @@ class AutomationController extends Controller
 
     public function automationLogin(Request $request){
 
-        $email = $request->pangkalan_email;
-        $pin = $request->pangkalan_pin;
+        $email  = $request->pangkalan_email;
+        $pin    = $request->pangkalan_pin;
 
         $cmd = '"C:\Program Files\nodejs\node.exe" C:\laragon\www\map\automation\rt.cjs ' . $email . ' ' . $pin;
         $output = shell_exec($cmd . " 2>&1");
@@ -56,15 +57,6 @@ class AutomationController extends Controller
     }
 
     public function run(Request $request){
-        $email  = $request->pangkalan_email;
-        $pin    = $request->pangkalan_pin;
-        $inputTrx = $request->input_transaction;
-        $nikType = $request->nik_type;
-
-        $message = [
-            'Pelanggan Usaha Mikro yang sudah terdaftar perlu memperbarui informasi jenis usaha. Pelanggan diwajibkan untuk melengkapi Nomor Induk Berusaha (NIB) paling lambat 30 April 2025. Silahkan melanjutkan ke tahapan berikutnya untuk dapat melakukan transaksi.'
-        ];
-
         $data           = Excel::toArray(new YourExcelImport, $request->file('excel_file'));
         // Hilangkan baris pertama (biasanya header)
         $filteredData = array_slice($data[0], 0);
@@ -77,11 +69,17 @@ class AutomationController extends Controller
         });
         //$selectedData = array_slice($cleanedData, 0, $inputTrx);
 
-        $jsonNikList = escapeshellarg(json_encode(array_values($cleanedData)));
-        $scriptPath = base_path('resources/js/pup-parent.cjs'); // Lokasi script Puppeteer
+        $email          = $request->pangkalan_email;
+        $pin            = $request->pangkalan_pin;
+        $inputTrx       = $request->input_transaction;
+        $nikType        = $request->nik_type;
+        $URL            = config('app.url_verification_nik');
+        $jsonNikList    = escapeshellarg(json_encode(array_values($cleanedData)));
 
-        $output = shell_exec("node $scriptPath $email $pin $jsonNikList $inputTrx 2>&1");
-        //$outputArray = json_decode(trim($output), true);
+        $scriptPath     = base_path('resources/js/pup-parent.cjs'); // Lokasi script Puppeteer
+        // $output = shell_exec("node $scriptPath $email $pin $jsonNikList $inputTrx 2>&1");
+
+        $output = shell_exec("node $scriptPath $email $pin $jsonNikList $nikType $URL $inputTrx 2>&1");
 
         preg_match('/\{.*\}/s', $output, $matches);
         $jsonPart = $matches[0] ?? null;
@@ -90,39 +88,58 @@ class AutomationController extends Controller
         //return response()->json(['raw' => $output]);
 
         if (!is_array($outputArray) || empty($outputArray['valid_nik'])) {
-            return response()->json(['message' => 'No valid NIK found'], 400);
+            return response()->json([
+                'message' => 'No valid NIK found'
+            ], 400);
         }
-
-        //$validNik = array_slice($outputArray['valid_nik'], 0, $inputTrx);
-        //dd($output);
 
         $transactions = [];
         $validNikList = $outputArray['valid_nik'] ?? [];
+        $jmlValidNik  = count($outputArray['valid_nik']);
+
 
         $pangkalan = Pangkalan::with('user')
                     ->where('user_id', Auth::user()->id)
                     ->first();
-        
-        foreach ($validNikList as $nik) {
-            $transactions[] = [
-                'transaction_date' => Carbon::now()->toDateString(),
-                'nik' => $nik,
-                'nik_type' => 'UM',
-                'user_id' => Auth::user()->id,
-                'pangkalan_id' => $pangkalan->id,
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
-            ];
-        }
 
-        Transaksi::insert($transactions);
+        DB::beginTransaction();
+        try {
+            //code...
+            $pangkalan->update([
+                'transaction_quota' => $pangkalan->transaction_quota - $jmlValidNik
+            ]);
+
+            // ini looping masuk ke sini,
+
+        } catch (\Exception $e) {
+            DB::rollback(); // Batalkan semua perubahan jika terjadi error
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+        DB::commit(); // Simpan perubahan ke database jika tidak ada error
+
+        // foreach ($validNikList as $nik) {
+        //     $transactions[] = [
+        //         'transaction_date'  => Carbon::now()->toDateString(),
+        //         'nik'               => $nik,
+        //         'nik_type'          => $request->nik_type,
+        //         'user_id'           => Auth::user()->id,
+        //         'pangkalan_id'      => $pangkalan->id,
+        //         'created_at'        => Carbon::now(),
+        //         'updated_at'        => Carbon::now()
+        //     ];
+        // }
+
+        // Transaksi::insert($transactions);
+
 
         return response()->json([
-            'transactions' => $transactions,
-            'mentah' => $output,
-            'decoded' => $outputArray,
+            // 'transactions'   => $transactions,
+            'jmlValidNik'    => $jmlValidNik,
+            'pangkalan'      => $pangkalan->transaction_quota,
+            'mentah'         => $output,
+            'decoded'        => $outputArray,
             'json_extracted' => $jsonPart,
-            'error' => json_last_error_msg()
+            'error'          => json_last_error_msg()
         ]);
     }
 
@@ -170,15 +187,17 @@ class AutomationController extends Controller
 
         $email          = 'rikalikal97@gmail.com';
         $pin            = '232323';
-        $type           = 'UM'; // UM atau RT
+        $inputTrx       = 50;
+        $nikType        = 'UM'; // UM atau RT
         $URL            = config('app.url_verification_nik');
         $jsonNikList    = escapeshellarg(json_encode(array_values($cleanedData)));
 
-        $output = shell_exec("node $scriptPath $email $pin $jsonNikList $type $URL 2>&1");
+        // $output = shell_exec("node $scriptPath $email $pin $jsonNikList $type $URL 2>&1");
+        $output = shell_exec("node $scriptPath $email $pin $jsonNikList $nikType $URL $inputTrx 2>&1");
         // return $URL;
 
         return response()->json([
-            'message'       => 'success',
+            'message'       => 'susccess',
             'output'        => $output,
         ]);
 

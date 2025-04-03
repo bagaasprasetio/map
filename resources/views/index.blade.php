@@ -56,7 +56,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-12 mx-2" style="border: 3px dashed rgb(219, 219, 219); border-radius: 10px;">
             <div class="card-body">
                 <div class="row justify-content-center text-center py-3">
@@ -65,7 +65,7 @@
                         <h3 class="fw-bold text-gray-700 mb-1">Mulai input data otomatis</h3>
                         <div>
                             <form>
-                                
+
                             </form>
                             <button class="btn btn-primary shadow-sm mt-2" id="startBotBtn">Mulai Input Data</button>
                         </div>
@@ -80,9 +80,9 @@
                 </div>
             </div>
         </div>
-    
+
         @endif
-        
+
         @if (auth()->user()->role === 'ao' || auth()->user()->role === 'sa')
 
         <div class="col-xl-3 col-md-6 mb-4">
@@ -98,7 +98,7 @@
                     </div>
                 </div>
             </div>
-        </div> 
+        </div>
 
         @endif
 
@@ -179,11 +179,11 @@
                         <label for="inputEmail4" class="form-label">Pilih Tipe NIK</label>
                         <div class="d-flex">
                             <div class="form-check mr-4">
-                                <input class="form-check-input" type="radio" name="nik_type" value="rt">
+                                <input class="form-check-input" type="radio" name="nik_type" value="RT">
                                 <label class="form-check-label">Rumah Tangga (RT)</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="nik_type" value="um">
+                                <input class="form-check-input" type="radio" name="nik_type" value="UM">
                                 <label class="form-check-label">Usaha Mikro (UM)</label>
                             </div>
                         </div>
@@ -266,7 +266,7 @@
                 }
             });
 
-            
+
         });
 
         $('#startAutomationBtn').on('click', function(e){
@@ -322,8 +322,8 @@
                         });
 
                         $.each(errors, function(field, messages) {
-                            $('#' + field).addClass('is-invalid'); 
-                            $('#' + field + '_error').removeClass('d-none').text(messages[0]);     
+                            $('#' + field).addClass('is-invalid');
+                            $('#' + field + '_error').removeClass('d-none').text(messages[0]);
                         });
 
                     }

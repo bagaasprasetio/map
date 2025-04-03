@@ -13,7 +13,7 @@ const rtNik = async (email, pin) => {
     try {
         await page.waitForSelector('#mantine-r5');
         await page.type('#mantine-r5', '3201132312710002', { delay: 50 });
-    
+
         const buttons = await page.$$('button'); // Ambil semua tombol
         for (let button of buttons) {
             let text = await page.evaluate(el => el.innerText, button);

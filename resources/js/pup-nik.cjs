@@ -10,7 +10,7 @@ async function clickWithDelay(page, selector, description, delay = 500) {
     }
 }
 
-async function cekNik(browser, nikList, redirectBackURL, inputTrx, type) {
+async function cekNik(browser, nikList, redirectBackURL, inputTrx, nikType) {
     const pages = await browser.pages();
     const page = pages.length > 1 ? pages[1] : await browser.newPage();
     let validNikList = [];
@@ -77,9 +77,9 @@ async function cekNik(browser, nikList, redirectBackURL, inputTrx, type) {
                             await page.evaluate(button => button.click(), continueButton);
                             console.log(`✅ Radio button "Usaha Mikro" berhasil dipilih.`);
 
-                            console.log(`🟠 type adalah ${type}`);
-                            if (type == 'UM') {
-                                console.log(`🟠 type adalah ${type}: Exec if`);
+                            console.log(`🟠 nikType adalah ${nikType}`);
+                            if (nikType == 'UM') {
+                                console.log(`🟠 nikType adalah ${nikType}: Exec if`);
                                 // Tunggu modal baru muncul setelah klik continueButton
                                 await page.waitForSelector('.mantine-Modal-body.mantine-1q36a81', { timeout: 3000 });
                                 // Ambil kembali modal yang baru muncul
@@ -199,10 +199,10 @@ async function cekNik(browser, nikList, redirectBackURL, inputTrx, type) {
                                 await page.click(buttonSelector);
                             }
 
-                            // await clickWithDelay(page, '[data-testid="btnCheckOrder"]', '🛒 Cek Pesanan');
-                            // await clickWithDelay(page, '[data-testid="btnPay"]', '💳 Proses Transaksi');
-                            // await clickWithDelay(page, 'a[href="/merchant/app/verification-nik"]', '🏠 Ke Beranda');
-                            // validNikList.push(nik);
+                            await clickWithDelay(page, '[data-testid="btnCheckOrder"]', '🛒 Cek Pesanan');
+                            await clickWithDelay(page, '[data-testid="btnPay"]', '💳 Proses Transaksi');
+                            await clickWithDelay(page, 'a[href="/merchant/app/verification-nik"]', '🏠 Ke Beranda');
+                            validNikList.push(nik);
                         } else {
                             console.log(`❌ NIK ${nik}: Transaksi tidak dapat dilakukan karena batas LPG tercapai.`);
                             await page.goto(redirectBackURL, { waitUntil: "domcontentloaded" }); // Kembali ke halaman sebelumnya
