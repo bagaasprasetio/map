@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\MultipleExcelImport;
 use App\Imports\YourExcelImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -58,8 +59,20 @@ class AutomationController extends Controller
 
     public function run(Request $request){
         $data           = Excel::toArray(new YourExcelImport, $request->file('excel_file'));
+        $data           = Excel::toArray(new MultipleExcelImport, $request->file('excel_file'));
         // Hilangkan baris pertama (biasanya header)
-        $filteredData = array_slice($data[0], 0);
+
+        $type = 'UM'; // NIKTYPE
+        $arraySlice = '';
+
+        // Hilangkan baris pertama (biasanya header)
+        if ($type == 'UM') {
+            $arraySlice = array_slice($data[0], 1);
+        } else {
+            $arraySlice = array_slice($data[1], 1);
+        }
+        $filteredData = $arraySlice;
+
         // Transpose array agar membaca data secara vertikal
         $transposedData = array_map(null, ...$filteredData);
         $mergedData     = array_merge(...$transposedData);
@@ -156,9 +169,19 @@ class AutomationController extends Controller
 
         //  ganti line 75 - 86 ke functun run di line 42 - 52
         $inputLoop = 4;
-        $data           = Excel::toArray(new YourExcelImport, $request->file('file'));
+        // $data           = Excel::toArray(new YourExcelImport, $request->file('file'));
+        $data           = Excel::toArray(new MultipleExcelImport, $request->file('file'));
         // Hilangkan baris pertama (biasanya header)
-        $filteredData = array_slice($data[0], 0);
+
+        $type = 'UM';
+        $arraySlice = '';
+        if ($type == 'UM') {
+            $arraySlice = array_slice($data[0], 1);
+        } else {
+            $arraySlice = array_slice($data[1], 1);
+        }
+        $filteredData = $arraySlice;
+
         // Transpose array agar membaca data secara vertikal
         $transposedData = array_map(null, ...$filteredData);
         $mergedData     = array_merge(...$transposedData);
@@ -167,6 +190,14 @@ class AutomationController extends Controller
             return !is_null($value) && strlen($value) === 16;
         });
         $selectedData = array_slice($cleanedData, 0, $inputLoop);
+
+        return response()->json([
+            'filteredData'  => $filteredData,
+            'transposedData'=> $transposedData,
+            'mergedData'    => $mergedData,
+            'cleanedData'   => $cleanedData,
+            'selectedData'  => $selectedData,
+        ]);
 
         $scriptPath = base_path('resources/js/pup-parent.cjs'); // Lokasi script Puppeteer
 
