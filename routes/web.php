@@ -21,7 +21,6 @@ use App\Livewire\Index;
 |
 */
 
-Route::post('/run', [AutomationController::class, 'run'])->name('automation.run');
 Route::get('/excel', [AutomationController::class, 'index'])->name('pup-index');
 Route::post('/excel', [AutomationController::class, 'upload'])->name('pup-upload');
 
@@ -40,10 +39,13 @@ Route::middleware(['auth', 'role:ap', 'check.subs'])->group(function() {
     Route::get('/pangkalan', [PangkalanController::class, 'index'])->name('ap.index');
     Route::get('/pangkalan/check', [PangkalanController::class, 'pangkalanCheck'])->name('pangkalan.check');
 
+    Route::post('/run', [AutomationController::class, 'run'])->name('automation.run');
+
     Route::post('/automation/check', [AutomationController::class, 'automationAttrCheck'])->name('automation.check');
     Route::post('/automation/login', [AutomationController::class, 'automationLogin'])->name('automation.login');
 
     Route::post('/transaksi/add', [TransaksiController::class, 'transaksiAdd'])->name('transaksi.add');
+    Route::get('/transaksi/getall', [TransaksiController::class, 'getAll'])->name('transaksi.getall');
 
 });
 

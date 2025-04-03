@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Transaksi;
+use App\Models\Pangkalan;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class AutomationController extends Controller
 {
@@ -74,30 +77,48 @@ class AutomationController extends Controller
         $scriptPath = base_path('resources/js/pup-parent.cjs'); // Lokasi script Puppeteer
 
         $output = shell_exec("node $scriptPath $email $pin $jsonNikList $inputTrx 2>&1");
-        dd($output);
-        $outputArray = json_decode($output, true);
+        //$outputArray = json_decode(trim($output), true);
+
+        preg_match('/\{.*\}/s', $output, $matches);
+        $jsonPart = $matches[0] ?? null;
+        $outputArray = json_decode($jsonPart, true);
+
+        //return response()->json(['raw' => $output]);
 
         if (!is_array($outputArray) || empty($outputArray['valid_nik'])) {
             return response()->json(['message' => 'No valid NIK found'], 400);
         }
 
-        $validNik = array_slice($outputArray['valid_nik'], 0, $inputTrx);
+        //$validNik = array_slice($outputArray['valid_nik'], 0, $inputTrx);
         //dd($output);
 
         $transactions = [];
-        foreach ($validNik as $nik) {
+        $validNikList = $outputArray['valid_nik'] ?? [];
+
+        $pangkalan = Pangkalan::with('user')
+                    ->where('user_id', Auth::user()->id)
+                    ->first();
+        
+        foreach ($validNikList as $nik) {
             $transactions[] = [
+                'transaction_date' => Carbon::now()->toDateString(),
                 'nik' => $nik,
-                'status' => 'valid'
+                'nik_type' => 'UM',
+                'user_id' => Auth::user()->id,
+                'pangkalan_id' => $pangkalan->id,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
             ];
         }
 
-        //Transaksi::insert($transactions);
+        Transaksi::insert($transactions);
 
         return response()->json([
-            'message'   => 'success',
             'transactions' => $transactions,
-            'output'    => $output,
+            'mentah' => $output,
+            'decoded' => $outputArray,
+            'json_extracted' => $jsonPart,
+            'error' => json_last_error_msg()
         ]);
     }
 

@@ -104,13 +104,14 @@ async function cekNik(browser, nikList, redirectBackURL, inputTrx) {
                             } else if (isUsahaMikro) {
                                 console.log(`👉 Klik tombol 2x untuk Usaha Mikro`);
                                 await page.click(buttonSelector);
-                                await new Promise(resolve => setTimeout(resolve, 500)); // Delay kecil antara klik
+                                await new Promise(resolve => setTimeout(resolve, 1000)); // Delay kecil antara klik
                                 await page.click(buttonSelector);
                             }
 
                             await clickWithDelay(page, '[data-testid="btnCheckOrder"]', '🛒 Cek Pesanan');
                             await clickWithDelay(page, '[data-testid="btnPay"]', '💳 Proses Transaksi');
                             await clickWithDelay(page, 'a[href="/merchant/app/verification-nik"]', '🏠 Ke Beranda');
+                            
                             validNikList.push(nik);
                         } else {
                             console.log(`❌ NIK ${nik}: Transaksi tidak dapat dilakukan karena batas LPG tercapai.`);
@@ -135,7 +136,9 @@ async function cekNik(browser, nikList, redirectBackURL, inputTrx) {
     }
 
     await page.close();
-    return validNikList;
+
+    console.log(JSON.stringify({ valid_nik: validNikList }));
+    //return validNikList;
 }
 
 module.exports = { cekNik };

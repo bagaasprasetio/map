@@ -125,24 +125,29 @@
                     { 
                         data: 'subscriptions', 
                         render: function(data){
-                            let today = new Date().toISOString().split('T')[0];
-                            let status = null;
+                            let today = new Date();
+                            today.setHours(0,0,0,0);
+                            
+                            let status = "<span class='badge badge-warning'>Belum ada langganan</span>";
 
                             if (data && data.length > 0){
                                 for (let i = 0; i < data.length; i++){
-                                    let subsDate = new Date(data[i].subs_start).toISOString().split('T')[0];
-                                    let subsEnd = new Date(data[i].subs_end).toISOString().split('T')[0];
+                                    let subsStart = new Date(data[i].subs_start);
+                                    let subsEnd = new Date(data[i].subs_end);
+
+                                    subsStart.setHours(0,0,0,0);
+                                    subsEnd.setHours(0,0,0,0);
                                     
-                                    if (today >= subsDate && today <= subsEnd){
+                                    if (today >= subsStart && today <= subsEnd){
                                         status = "<span class='badge badge-success'>Aktif</span>";
                                         break;
-                                    } else {
-                                        status = "<span class='badge badge-danger'>Tidak Aktif</span>";
                                     }
                                 }
-                            } else {
-                                status = "<span class='badge badge-danger'>Tidak Aktif</span>";
-                            }
+
+                                if (status !== "<span class='badge badge-success'>Aktif</span>") {
+                                    status = "<span class='badge badge-danger'>Tidak Aktif</span>";
+                                }
+                            } 
 
                             return status;
                         }

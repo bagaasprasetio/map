@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Transaksi;
+use Yajra\DataTables\Facades\DataTables;
 
 class TransaksiController extends Controller
 {
@@ -34,5 +35,13 @@ class TransaksiController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function getAll(){
+        $all = Transaksi::all();
+
+        return DataTables::of($all)
+            ->addIndexColumn()
+            ->make(true);
     }
 }

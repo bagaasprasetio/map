@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Pangkalan;
 
 class Transaksi extends Model
 {
@@ -15,8 +16,10 @@ class Transaksi extends Model
         'transaction_date',
         'nik',
         'nik_type',
-        'transaction_status',
         'user_id',
-        'pangkalan_id'
+        'pangkalan_id',
+        'created_at',
+        'updated_at'
     ];
+
 }

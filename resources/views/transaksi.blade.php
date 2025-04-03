@@ -25,9 +25,8 @@
                             <th>Tanggal Transaksi</th>
                             <th>NIK</th>
                             <th>Tipe NIK</th>
-                            <th>Status Transaksi</th>
+                            <th>Pangkalan</th>
                             <th>Admin Pangkalan</th>
-                            <th>Nama Pangkalan</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -36,11 +35,8 @@
                             <td>20 April 2025, 15:03</td>
                             <td>3271 0413 0765 6754</td>
                             <td>RT</td>
-                            <td>
-                                <span class='badge badge-success'>Berhasil</span>
-                            </td>
-                            <td>Hj. Halimas</td>
                             <td>Pangkalan Gas Haji Halimah</td>
+                            <td>Hj. Halimas</td>
                         </tr>
                     </tbody>
                 </table>
@@ -88,4 +84,28 @@
             </div>
         </div>
     </div>
+
+    <script>
+        $(document).ready(function(){
+            $.ajaxSetup({
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content")
+                }
+            });
+
+            let transactionTable = $('#transaction_table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: "{{ route('transaksi.getall') }}",
+                columns: [
+                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, serachable: false },
+                    { data: 'transaction_date' },
+                    { data: 'nik' },
+                    { data: 'nik_type' },
+                    { data: 'user_id' },
+                    { data: 'pangkalan_id' }
+                ],
+            })
+        });
+    </script>
     @endsection
