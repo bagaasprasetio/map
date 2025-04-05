@@ -54,6 +54,7 @@
                                     <th>Tanggal Mulai</th>
                                     <th>Tanggal Berakhir</th>
                                     <th>Didaftarkan Oleh</th>
+                                    <th>Aksi</th>
                                 </tr>
                             </thead>
                         </table>
@@ -201,10 +202,50 @@
                                             return formatDate(data);
                                         }
                                     },
-                                    { data: 'registered_by.user_name', name: 'user_name' }
+                                    { data: 'registered_by.user_name', name: 'user_name' },
+                                    { data: 'action' }
                                 ]
                             });
                         }
+                    }
+                });
+            });
+
+            $(document).on('click', '#deleteSubsDateBtn', function(e){
+                e.preventDefault();
+                
+                let id = $(this).data('id');
+                Swal.fire({
+                    title: "Konfirmasi",
+                    text: "Apakah Anda yakin untuk menghapus data ini?",
+                    icon: "warning",
+                    cancelButtonColor: "#6c757d",
+                    showCancelButton: true,
+                    cancelButtonText: "Batal",
+                    confirmButtonColor: "#d33",
+                    confirmButtonText: "Hapus Data"
+                }).then((result) => {
+                    if (result.isConfirmed){
+                        $.ajax({
+                            url: "{{ route('subs.delete') }}",
+                            type: "delete",
+                            data: {
+                                id: id
+                            },
+                            success: function(response){
+                                Swal.fire({
+                                    title: "Berhasil",
+                                    text: "Data berhasil dihapus",
+                                    icon: "success"
+                                });
+
+                                $('#subsHistoryTable').DataTable().ajax.reload(null, false);
+                                pangkalanAccTable.ajax.reload(null, false);
+                            },
+                            error: function(xhr){
+                                Swal.fire("Oops!", "Terjadi kesalahan, data gagal dihapus.", "error");
+                            }
+                        });
                     }
                 });
             });

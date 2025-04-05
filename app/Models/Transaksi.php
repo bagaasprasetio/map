@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Pangkalan;
 
 class Transaksi extends Model
 {
@@ -21,5 +20,13 @@ class Transaksi extends Model
         'created_at',
         'updated_at'
     ];
+
+    public function user(){
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    public function pangkalan(){
+        return $this->belongsTo(Pangkalan::class, 'pangkalan_id', 'id');
+    }
 
 }

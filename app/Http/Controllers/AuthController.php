@@ -19,11 +19,12 @@ class AuthController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'email' => 'required|email',
-                'password' => 'required'
+                'password' => 'required|min:6'
             ], [
                 'email.required' => 'Email tidak boleh kosong',
                 'email.email' => 'Format isian salah, cth: name@mail.com',
-                'password.required' => 'Password tidak boleh kosong'
+                'password.required' => 'Password tidak boleh kosong',
+                'password.min' => 'Password kurang dari 6 karakter'
             ]);
     
             if($validator->fails()){

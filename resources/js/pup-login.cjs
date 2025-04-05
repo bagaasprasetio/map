@@ -22,6 +22,21 @@ async function login(email, password) {
     await new Promise(resolve => setTimeout(resolve, 500));
     await page.click('button[type="submit"]');
 
+    // Cek apakah field password dianggap invalid (salah)
+    const isPasswordInvalid = await page.$eval('#mantine-r1', el => el.getAttribute('aria-invalid') === 'true');
+
+    if (isPasswordInvalid) {
+        console.log('Login gagal: Password salah');
+        await browser.close();
+
+        console.log(JSON.stringify({
+            success: false,
+            error: "Login akun merchant gagal (PIN salah)"
+        }));
+        
+        return;
+    }
+
     try {
         await page.waitForSelector('span[data-testid="btnClose793f59dc-3bb0-4cae-8099-ffbe06336f5e"]', { timeout: 3000 });
         await page.evaluate(() => {

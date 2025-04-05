@@ -349,6 +349,11 @@
                         $('#changePassModal').modal('hide');
                         Swal.fire("Berhasil!", "Password berhasil diubah", "success");
                         $("#user_change_password").val('');
+
+                        $('.is-invalid').each(function() {
+                            $(this).removeClass('is-invalid');
+                            $('#' + this.id + '_error').addClass('d-none').text('');
+                        });
                     },
                     error: function(xhr){
                         if (xhr.status === 400){

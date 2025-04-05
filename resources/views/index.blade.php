@@ -46,7 +46,7 @@
                         <div>
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                 Transaksi Pangkalan</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">400 dari <span>400</span></div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $transactions }}</div>
                             <div class="text-xs mb-0 font-weight-bold text-gray-500">Per hari ini</div>
                         </div>
                         <div>
@@ -92,7 +92,7 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Total Transaksi Pangkalan</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">400.939</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $transactions }}</div>
                             <div class="text-xs mb-0 font-weight-bold text-gray-500">Per hari ini</div>
                         </div>
                     </div>
@@ -109,8 +109,8 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Total Pangkalan Aktif</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
+                                Total Pangkalan Terdaftar</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $pangkalan }}</div>
                         </div>
                     </div>
                 </div>
@@ -123,8 +123,8 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Total User Aktif</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
+                                Total User Terdaftar</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $user }}</div>
                         </div>
                     </div>
                 </div>
@@ -155,7 +155,7 @@
                         <input type="text" class="form-control" id="pangkalan_email" name="pangkalan_email" placeholder="Ketik di sini" readonly>
                     </div>
                     <div class="col-12 mt-3">
-                        <label for="inputEmail4" class="form-label">PIN</label>
+                        <label for="inputEmail4" class="form-label">PIN (6 Digit)</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="pangkalan_pin" name="pangkalan_pin" placeholder="Ketik di sini">
                             <button class="btn btn-outline-secondary toggle-password" type="button">
@@ -234,6 +234,14 @@
             }
         });
 
+        document.getElementById('pangkalan_pin').addEventListener('input', function (e) {
+            this.value = this.value.replace(/\D/g, '').slice(0, 6);
+        });
+
+        document.getElementById('input_transaction').addEventListener('input', function (e) {
+            this.value = this.value.replace(/\D/g, '').slice(0, 2);
+        });
+
         $(document).on("click", ".toggle-password", function() {
             let passwordField = $(this).siblings('input');
             let icon = $(this).find("i");
@@ -273,10 +281,6 @@
             e.preventDefault();
             let nikType = $("input[name='nik_type']:checked").val();
             let formData = new FormData($('#formBotAttr')[0]);
-            // let excelFile = $('#excel_file')[0].files[0];
-            // formData.append("file", excelFile);
-
-            //console.log([...formData.entries()]);
 
             if (!nikType) {
                 Swal.fire("Error", "Pilih tipe NIK terlebih dahulu", "error");
@@ -342,24 +346,16 @@
                     Swal.fire("Berhasil", "Bot berhasil input data, silahkan cek ke website target", "success");
                     $("#startBotModal").modal('hide');
                     $('#formBotAttr')[0].reset();
-
-                    /* $.ajax({
-                        url: "{{ route('transaksi.add') }}",
-                        type: "post",
-                        data: {
-                            transaction_total: $('#input_transaction').val(),
-                            nik_type: nikType
-                        },
-                        success: function(response){
-                            Swal.fire("Berhasil!", "Input transaksi ke website target selesai", "success");
-                        },
-                        error: function(xhr){
-                            Swal.fire("Gagal!", "Input transaksi gagal", "error");
-                        }
-                    }); */
                 },
                 error: function(xhr){
-                    Swal.fire("Gagal!", "Terjadi kesalahan saat menjalankan bot.", "error");
+                    let errorMessage = "Terjadi kesalahan saat menjalankan bot.";
+    
+                    // Coba ambil pesan dari response backend
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+
+                    Swal.fire("Gagal!", errorMessage, "error");
                 }
             });
         }

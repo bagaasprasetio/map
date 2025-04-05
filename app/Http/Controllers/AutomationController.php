@@ -18,13 +18,14 @@ class AutomationController extends Controller
 
     public function automationAttrCheck(Request $request){
         $validator = Validator::make($request->all(), [
-            'pangkalan_pin' => 'required|numeric',
+            'pangkalan_pin' => 'required|numeric|digits:6',
             'input_transaction' => 'required',
             'excel_file' => 'required|file|mimes:xlsx,xls|max:2048'
         ], [
             'input_transaction.required' => 'Jumlah inputan wajib diisi',
             'pangkalan_pin.required' => 'PIN akun merchant wajib diisi',
             'pangkalan_pin.numeric' => 'PIN akun merchant wajib angka',
+            'pangkalan_pin.digits' => 'PIN akun merchant terdiri dari 6 karakter',
             'excel_file.required' => 'File excel belum dimasukkan',
             'excel_file.file' => 'File excel tidak valid',
             'excel_file.mimes' => 'File excel harus berformat .xlsx atau .xls',
@@ -57,41 +58,52 @@ class AutomationController extends Controller
 
     }
 
+
     public function run(Request $request){
-        $data           = Excel::toArray(new YourExcelImport, $request->file('excel_file'));
+        //$data           = Excel::toArray(new YourExcelImport, $request->file('excel_file'));
         $data           = Excel::toArray(new MultipleExcelImport, $request->file('excel_file'));
         // Hilangkan baris pertama (biasanya header)
 
-        $type = 'UM'; // NIKTYPE
+        $nikType = $request->nik_type;// NIKTYPE
+        $usedNik = Transaksi::where('nik_type', $nikType)
+                            ->whereRaw('DATE_ADD(transaction_date, INTERVAL 7 DAY) >= ?', [Carbon::now()])
+                            ->pluck('nik')
+                            ->toArray();
         $arraySlice = '';
+        $processedNik = '';
 
         // Hilangkan baris pertama (biasanya header)
-        if ($type == 'UM') {
+        if ($nikType == 'UM') {
             $arraySlice = array_slice($data[0], 1);
         } else {
             $arraySlice = array_slice($data[1], 1);
         }
-        $filteredData = $arraySlice;
+
+        $arraySlice = array_map(function($item) {
+            return is_array($item) ? reset($item) : $item;
+        }, $arraySlice);
+
+        // Filter NIK dalam 7 hari terakhir
+        $processedNik = array_diff($arraySlice, $usedNik);
+        
+        // Reset index biar clean
+        $filteredData = array_values($processedNik);
 
         // Transpose array agar membaca data secara vertikal
-        $transposedData = array_map(null, ...$filteredData);
-        $mergedData     = array_merge(...$transposedData);
+        //$transposedData = array_map(null, ...$filteredData);
+        //$mergedData     = array_merge(...$transposedData);
         // Hilangkan nilai null & hanya ambil yang panjangnya 16 karakter
-        $cleanedData = array_filter($mergedData, function ($value) {
+        $cleanedData = array_filter($filteredData, function ($value) {
             return !is_null($value) && strlen($value) === 16;
         });
-        //$selectedData = array_slice($cleanedData, 0, $inputTrx);
 
         $email          = $request->pangkalan_email;
         $pin            = $request->pangkalan_pin;
         $inputTrx       = $request->input_transaction;
-        $nikType        = $request->nik_type;
         $URL            = config('app.url_verification_nik');
         $jsonNikList    = escapeshellarg(json_encode(array_values($cleanedData)));
 
         $scriptPath     = base_path('resources/js/pup-parent.cjs'); // Lokasi script Puppeteer
-        // $output = shell_exec("node $scriptPath $email $pin $jsonNikList $inputTrx 2>&1");
-
         $output = shell_exec("node $scriptPath $email $pin $jsonNikList $nikType $URL $inputTrx 2>&1");
 
         preg_match('/\{.*\}/s', $output, $matches);
@@ -100,16 +112,32 @@ class AutomationController extends Controller
 
         //return response()->json(['raw' => $output]);
 
-        if (!is_array($outputArray) || empty($outputArray['valid_nik'])) {
+        // if (!is_array($outputArray) || empty($outputArray['valid_nik'])) {
+        //     return response()->json([
+        //         'message' => 'No valid NIK found'
+        //     ], 400);
+        // }
+
+        // Kasus login gagal (dari Puppeteer)
+        if (isset($outputArray['success']) && $outputArray['success'] === false) {
             return response()->json([
-                'message' => 'No valid NIK found'
+                'success' => false,
+                'message' => $outputArray['error'] ?? 'Terjadi kesalahan saat login bot.'
             ], 400);
         }
+
+        // Kasus: login berhasil, tapi nggak ada NIK valid
+        if (empty($outputArray['valid_nik'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada NIK valid yang bisa diproses.'
+            ], 400);
+        }
+
 
         $transactions = [];
         $validNikList = $outputArray['valid_nik'] ?? [];
         $jmlValidNik  = count($outputArray['valid_nik']);
-
 
         $pangkalan = Pangkalan::with('user')
                     ->where('user_id', Auth::user()->id)
@@ -117,12 +145,24 @@ class AutomationController extends Controller
 
         DB::beginTransaction();
         try {
-            //code...
+            
             $pangkalan->update([
                 'transaction_quota' => $pangkalan->transaction_quota - $jmlValidNik
             ]);
 
-            // ini looping masuk ke sini,
+            foreach ($validNikList as $nik) {
+                $transactions[] = [
+                    'transaction_date'  => Carbon::now()->toDateString(),
+                    'nik'               => $nik,
+                    'nik_type'          => $nikType,
+                    'user_id'           => Auth::user()->id,
+                    'pangkalan_id'      => $pangkalan->id,
+                    'created_at'        => Carbon::now(),
+                    'updated_at'        => Carbon::now()
+                ];
+            }
+
+            Transaksi::insert($transactions);
 
         } catch (\Exception $e) {
             DB::rollback(); // Batalkan semua perubahan jika terjadi error
@@ -130,29 +170,27 @@ class AutomationController extends Controller
         }
         DB::commit(); // Simpan perubahan ke database jika tidak ada error
 
-        // foreach ($validNikList as $nik) {
-        //     $transactions[] = [
-        //         'transaction_date'  => Carbon::now()->toDateString(),
-        //         'nik'               => $nik,
-        //         'nik_type'          => $request->nik_type,
-        //         'user_id'           => Auth::user()->id,
-        //         'pangkalan_id'      => $pangkalan->id,
-        //         'created_at'        => Carbon::now(),
-        //         'updated_at'        => Carbon::now()
-        //     ];
-        // }
-
-        // Transaksi::insert($transactions);
-
-
         return response()->json([
-            // 'transactions'   => $transactions,
+            'transactions'   => $transactions,
             'jmlValidNik'    => $jmlValidNik,
             'pangkalan'      => $pangkalan->transaction_quota,
             'mentah'         => $output,
             'decoded'        => $outputArray,
             'json_extracted' => $jsonPart,
-            'error'          => json_last_error_msg()
+            'error'          => json_last_error_msg(),
+            'used_nik'       => $usedNik,
+            'diff_nik'       => $filteredData
+        ]);
+    }
+
+    public function getUsedNik(){
+        $usedNik = Transaksi::where('nik_type', 'RT')
+                            ->whereRaw('DATE_ADD(transaction_date, INTERVAL 7 DAY) >= ?', [Carbon::now()])
+                            ->pluck('nik')
+                            ->toArray();
+
+        return response()->json([
+            'used_nik' => $usedNik
         ]);
     }
 

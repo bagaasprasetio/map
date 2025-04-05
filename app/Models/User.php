@@ -40,4 +40,8 @@ class User extends Authenticatable
         return $this->hasMany(Subscription::class, 'registered_by', 'id');
     }
 
+    public function getUserTransaction(){
+        return $this->hasMany(Transaksi::class, 'user_id', 'id');
+    }
+
 }

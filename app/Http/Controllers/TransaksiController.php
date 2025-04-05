@@ -38,10 +38,20 @@ class TransaksiController extends Controller
     }
 
     public function getAll(){
-        $all = Transaksi::all();
+        $all = Transaksi::with('user', 'pangkalan')->orderBy('transaction_date', 'desc');
 
         return DataTables::of($all)
             ->addIndexColumn()
             ->make(true);
+    }
+
+    public function getUsedNik(Request $request){
+        //$nikType = $request->nik_type;
+        $nikType = 'UM';
+        $usedNik = Transaksi::where('nik_type', $nikType)->pluck('nik');
+
+        return response()->json([
+            'used_nik' => $usedNik
+        ]);
     }
 }

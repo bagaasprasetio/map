@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Pangkalan;
+use App\Models\Transaksi;
+use Carbon\Carbon;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
@@ -12,7 +14,11 @@ class PangkalanController extends Controller
 {
     public function index(){
         $data = Pangkalan::where('user_id', Auth::user()->id)->get();
-        return view('index', compact('data'));
+        $pangkalan = Transaksi::where('user_id', Auth::user()->id)->first();
+        $transactions = Transaksi::whereDate('created_at', Carbon::now())
+                                ->where('pangkalan_id', $pangkalan->pangkalan_id)
+                                ->count();
+        return view('index', compact('data', 'transactions'));
     }
 
     function pangkalanMaster(){
@@ -20,7 +26,7 @@ class PangkalanController extends Controller
     }
 
     public function getAll(){
-        $all = Pangkalan::with('user')->get();
+        $all = Pangkalan::with('user')->orderBy('created_at', 'desc')->get();
         //return response()->json($all);
         
         return DataTables::of($all)

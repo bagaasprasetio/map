@@ -11,8 +11,6 @@ use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 
-
-
 class UserController extends Controller
 {
     public function userMaster(){
@@ -41,6 +39,10 @@ class UserController extends Controller
         $subHis = Subscription::with('registeredBy')->where('user_id', $id)->orderBy('subs_end', 'DESC');
         return DataTables::of($subHis)
             ->addIndexColumn()
+            ->addColumn('action', function($row) {
+                return '<a class="btn btn-outline-delete" id="deleteSubsDateBtn" data-id="'.$row->id.'"><i class="fas fa-trash"></i></a>';
+            })
+            ->rawColumns(['action'])
             ->make(true);
     }
 
@@ -84,7 +86,7 @@ class UserController extends Controller
 
 
     public function getAll(){
-        $all = User::all();
+        $all = User::orderBy('created_at', 'desc');
         return DataTables::of($all)
             ->addIndexColumn()
             ->addColumn('action', function($row) {
@@ -101,14 +103,14 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'user_name' => 'required',
             'user_email' => 'required|email',
-            'user_password' => 'required|min:8',
+            'user_password' => 'required|min:6',
             'user_role' => 'in:sa,ao,ap'
         ], [
             'user_name.required' => 'Username wajib diisi',
             'user_email.required' => 'Email wajib diisi',
             'user_password.required' => 'Password wajib diisi',
             'user_email.email' => 'Format isian salah, cth: name@mail.com',
-            'user_password.min' => 'Password kurang dari 8 karakter',
+            'user_password.min' => 'Password kurang dari 6 karakter',
             'user_role.in' => 'User role wajib dipilih'
         ]);
 
@@ -223,10 +225,10 @@ class UserController extends Controller
         $id = $request->id;
 
         $validator = Validator::make($request->all(), [
-            'user_change_password' => 'required|min:8'
+            'user_change_password' => 'required|min:6'
         ], [
             'user_change_password.required' => 'Password wajib diisi',
-            'user_change_password.min' => 'Password kurang dari 8 karakter'
+            'user_change_password.min' => 'Password kurang dari 6 karakter'
         ]);
 
         if ($validator->fails()){
@@ -254,6 +256,31 @@ class UserController extends Controller
             ->doesntHave('pangkalan')
             ->get();
         return response()->json($data);
+    }
+
+    public function subsDelete(Request $request){
+        $id = $request->id;
+
+        try {
+            $subs = Subscription::find($id);
+
+            if ($subs){
+                $subs->delete();
+
+                return response()->json([
+                    'message' => 'berhasil dihapus'
+                ], 200);
+            } else {
+                return response()->json([
+                    'message' => 'data tidak ditemukan!',
+                ], 404);
+            }
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     
