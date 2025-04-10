@@ -43,6 +43,7 @@ Route::middleware(['auth', 'role:ap', 'check.subs'])->group(function() {
 
     Route::post('/automation/check', [AutomationController::class, 'automationAttrCheck'])->name('automation.check');
     Route::post('/automation/login', [AutomationController::class, 'automationLogin'])->name('automation.login');
+    Route::get('/automation/getprogress', [AutomationController::class, 'getProgress'])->name('automation.getprogress');
 
     Route::post('/transaksi/add', [TransaksiController::class, 'transaksiAdd'])->name('transaksi.add');
     Route::get('/transaksi/getall', [TransaksiController::class, 'getAll'])->name('transaksi.getall');

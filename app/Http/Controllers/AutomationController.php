@@ -12,6 +12,7 @@ use App\Models\Pangkalan;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class AutomationController extends Controller
 {
@@ -38,8 +39,20 @@ class AutomationController extends Controller
             ], 400);
         }
 
+        $inputTrx = $request->input_transaction;
+        $estimatedTime = $inputTrx * 36;
+        Cache::put('bot_done', false);
+
+        // Trigger async job atau proses di background (dummy simulation untuk sekarang)
+        dispatch(function () use ($inputTrx) {
+            sleep($inputTrx * 18); // simulasi proses
+            Cache::put('bot_done', true);
+        });
+
         return response()->json([
-            'status' => 'success'
+            'status'    => 'success',
+            'input_trx' => $request->input_transaction,
+            'eta'       => $estimatedTime
         ], 200);
     }
 
@@ -60,7 +73,6 @@ class AutomationController extends Controller
 
 
     public function run(Request $request){
-        //$data           = Excel::toArray(new YourExcelImport, $request->file('excel_file'));
         $data           = Excel::toArray(new MultipleExcelImport, $request->file('excel_file'));
         // Hilangkan baris pertama (biasanya header)
 
@@ -103,6 +115,13 @@ class AutomationController extends Controller
         $URL            = config('app.url_verification_nik');
         $jsonNikList    = escapeshellarg(json_encode(array_values($cleanedData)));
 
+        if (count($cleanedData) < $inputTrx){
+            return response()->json([
+                'message' => 'Jumlah NIK pada excel kurang dari jumlah input transaksi yang diminta!',
+                'total_valid_nik' => count($cleanedData)
+            ], 422);
+        }
+
         $scriptPath     = base_path('resources/js/pup-parent.cjs'); // Lokasi script Puppeteer
         $output = shell_exec("node $scriptPath $email $pin $jsonNikList $nikType $URL $inputTrx 2>&1");
 
@@ -122,7 +141,7 @@ class AutomationController extends Controller
         if (isset($outputArray['success']) && $outputArray['success'] === false) {
             return response()->json([
                 'success' => false,
-                'message' => $outputArray['error'] ?? 'Terjadi kesalahan saat login bot.'
+                'message' => $outputArray['error'] ?? 'Terjadi kesalahan saat login bot'
             ], 400);
         }
 
@@ -133,7 +152,6 @@ class AutomationController extends Controller
                 'message' => 'Tidak ada NIK valid yang bisa diproses.'
             ], 400);
         }
-
 
         $transactions = [];
         $validNikList = $outputArray['valid_nik'] ?? [];
@@ -146,9 +164,9 @@ class AutomationController extends Controller
         DB::beginTransaction();
         try {
             
-            $pangkalan->update([
-                'transaction_quota' => $pangkalan->transaction_quota - $jmlValidNik
-            ]);
+            // $pangkalan->update([
+            //     'transaction_quota' => $pangkalan->transaction_quota - $jmlValidNik
+            // ]);
 
             foreach ($validNikList as $nik) {
                 $transactions[] = [
@@ -179,7 +197,14 @@ class AutomationController extends Controller
             'json_extracted' => $jsonPart,
             'error'          => json_last_error_msg(),
             'used_nik'       => $usedNik,
-            'diff_nik'       => $filteredData
+            'diff_nik'       => $filteredData,
+            'input_trx'      => $inputTrx
+        ]);
+    }
+
+    public function getProgress(){
+        return response()->json([
+            'done' => Cache::get('bot_done', false)
         ]);
     }
 

@@ -63,12 +63,7 @@
                     <div class="col-6">
                         <i class="fas fa-robot fa-3x text-gray-400 mb-3"></i>
                         <h3 class="fw-bold text-gray-700 mb-1">Mulai input data otomatis</h3>
-                        <div>
-                            <form>
-
-                            </form>
-                            <button class="btn btn-primary shadow-sm mt-2" id="startBotBtn">Mulai Input Data</button>
-                        </div>
+                        <button class="btn btn-primary shadow-sm mt-2" id="startBotBtn">Mulai Input Data</button>
                     </div>
                 </div>
             </div>
@@ -258,6 +253,8 @@
         $(document).on('click', '#startBotBtn', function(e){
             e.preventDefault();
 
+            //$('#startBotModal').modal('show');
+
             $.ajax({
                 url: "{{ route('pangkalan.check') }}",
                 type: "get",
@@ -273,8 +270,6 @@
                     Swal.fire("Gagal!", "Terjadi kesalahan sistem", "error");
                 }
             });
-
-
         });
 
         $('#startAutomationBtn').on('click', function(e){
@@ -301,17 +296,28 @@
                 success: function(response){
                     Swal.fire({
                         html: `
-                            <div class="spinner-container" style="margin-bottom: 10px;">
-                                <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status">
+                            <div class="d-flex justify-content-center" id="statusContainer" style="display: none;">
+                                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
                                     <span class="sr-only">Loading...</span>
                                 </div>
                             </div>
-                            <span>Bot sedang dalam proses menginput data ke server. Mohon untuk tidak menganggu jalannya bot.</span>
+                            <div>Bot sedang dalam proses menginput data ke server. Mohon untuk TIDAK LOGIN ke akun merchant dan tidak menganggu jalannya bot.</div>
+                            <p id="etaText" class="mt-3"></p>
                         `,
                         title: "Sedang Memproses",
                         allowOutsideClick: false,
                         allowEscapeKey: false,
-                        showConfirmButton: false
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            let eta = response.eta; // dari response
+                            updateEtaText(eta);
+                            countdown = setInterval(() => {
+                                eta--;
+                                updateEtaText(eta);
+                            }, 1000);
+
+                            getProgress();
+                        }
                     });
 
                     executeBot(formData);
@@ -343,12 +349,19 @@
                 contentType: false,
                 processData: false,
                 success: function(response){
-                    Swal.fire("Berhasil", "Bot berhasil input data, silahkan cek ke website target", "success");
+                    Swal.fire(
+                        "Berhasil", 
+                        `Bot berhasil input data, silahkan cek ke website target. <br> Jumlah Request: ${response.input_trx}, Jumlah Transaksi Berhasil: ${response.jmlValidNik}`, 
+                        "success");
                     $("#startBotModal").modal('hide');
                     $('#formBotAttr')[0].reset();
                 },
                 error: function(xhr){
                     let errorMessage = "Terjadi kesalahan saat menjalankan bot.";
+
+                    if (xhr.status === 422) {
+                        Swal.fire("Error!", xhr.responseJSON.message, "error");
+                    }
     
                     // Coba ambil pesan dari response backend
                     if (xhr.responseJSON && xhr.responseJSON.message) {
@@ -359,6 +372,57 @@
                 }
             });
         }
+
+        let progressChecker;
+
+        function startProcess() {
+            const inputTrx = $('#input_transaction').val(); // contoh jumlah input
+
+            fetch(`{{ route('automation.check') }}`, {
+                method: 'POST',
+                body: JSON.stringify({ inputTrx })
+            })
+            .then(res => res.json())
+            .then(data => {
+                let eta = data.eta;
+                document.getElementById('statusContainer').style.display = 'flex';
+                updateEtaText(eta);
+                
+                countdown = setInterval(() => {
+                    eta--;
+                    updateEtaText(eta);
+                }, 1000);
+
+                statusChecker = setInterval(() => {
+                fetch(`{{ route('automation.getprogress') }}`)
+                    .then(res => res.json())
+                    .then(data => {
+                    if (data.done) {
+                        clearInterval(countdown);
+                        clearInterval(statusChecker);
+                        document.getElementById('etaText').innerText = 'Proses selesai';
+                    }
+                    });
+                }, 1000);
+            });
+        }
+
+        function updateEtaText(eta) {
+            document.getElementById('etaText').innerText = eta > 0 ? `Estimasi selesai dalam ${eta} detik...` : 'Menunggu konfirmasi...';
+        }
+
+        // function getProgress(){
+        //     fetch(`{{ route('automation.getprogress') }}`)
+        //         .then(res => res.json())
+        //         .then(data => {
+        //         if (!data.done) {
+        //             setTimeout(getProgress, 1000);
+        //         } else {
+        //             clearInterval(countdown);
+        //             document.getElementById('etaText').innerText = 'Proses selesai!';
+        //         }
+        //     });
+        // }
     });
 </script>
 

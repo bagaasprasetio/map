@@ -15,9 +15,14 @@ class PangkalanController extends Controller
     public function index(){
         $data = Pangkalan::where('user_id', Auth::user()->id)->get();
         $pangkalan = Transaksi::where('user_id', Auth::user()->id)->first();
-        $transactions = Transaksi::whereDate('created_at', Carbon::now())
-                                ->where('pangkalan_id', $pangkalan->pangkalan_id)
-                                ->count();
+        $transactions = 0;
+
+        if ($pangkalan){
+            $transactions = Transaksi::whereDate('created_at', Carbon::now())
+                                    ->where('pangkalan_id', $pangkalan->pangkalan_id)
+                                    ->count();
+        }
+        
         return view('index', compact('data', 'transactions'));
     }
 
