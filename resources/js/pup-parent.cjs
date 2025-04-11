@@ -1,7 +1,6 @@
 const { login } = require('./pup-login.cjs');
 const { cekNik } = require('./pup-nik.cjs');
 
-
 (async () => {
     const email     = process.argv[2];
     const password  = process.argv[3];

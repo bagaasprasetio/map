@@ -123,6 +123,18 @@
                 }
             });
         });
+
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === ' ') {
+                e.preventDefault(); // blokir spasi
+            }
+        });
+
+        document.getElementById('email').addEventListener('keypress', function(e) {
+            if (e.key === ' ') {
+                e.preventDefault(); // blokir spasi
+            }
+        });
             
     });
 </script>

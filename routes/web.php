@@ -44,9 +44,11 @@ Route::middleware(['auth', 'role:ap', 'check.subs'])->group(function() {
 
     Route::post('/automation/check', [AutomationController::class, 'automationAttrCheck'])->name('automation.check');
     Route::post('/automation/login', [AutomationController::class, 'automationLogin'])->name('automation.login');
+    Route::get('/automation/getprogress', [AutomationController::class, 'getProgress'])->name('automation.getprogress');
 
     Route::post('/transaksi/add', [TransaksiController::class, 'transaksiAdd'])->name('transaksi.add');
     Route::get('/transaksi/getall', [TransaksiController::class, 'getAll'])->name('transaksi.getall');
+    Route::get('/transaksi/getusednik', [AutomationController::class, 'getUsedNik'])->name('transaksi.getusednik');
 
 });
 
@@ -72,6 +74,7 @@ Route::middleware(['role:sa'])->group(function() {
     Route::get('/subs/history/{id}', [UserController::class, 'getSubsHistory'])->name('subs.history');
     Route::post('/subs/renew', [UserController::class, 'subsRenewal'])->name('subs.renewal');
     Route::get('/subs/check', [UserController::class, 'subsCheck'])->name('subs.check');
+    Route::delete('/subs/delete', [UserController::class, 'subsDelete'])->name('subs.delete');
     Route::put('/subs/pangkalanchange', [UserController::class, 'pangkalanChange'])->name('pangkalan.change');
     Route::get('/user/getall', [UserController::class, 'getAll'])->name('user.getall');
     Route::post('/user/add', [UserController::class, 'userAdd'])->name('user.add');

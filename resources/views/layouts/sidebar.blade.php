@@ -12,11 +12,15 @@
             <span>Dashboard</span></a>
     </li>
 
+    @if (auth()->user()->role === 'ap')
+
     <li class="nav-item {{ request()->routeIs('transaksi.master') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('transaksi.master') }}">
             <i class="fas fa-fw fa-clock"></i>
             <span>Transaksi Pangkalan</span></a>
     </li>
+    
+    @endif
 
     @if (auth()->user()->role === 'sa')
 

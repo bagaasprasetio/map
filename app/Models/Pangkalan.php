@@ -21,4 +21,8 @@ class Pangkalan extends Model
     public function user(){
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
+
+    public function getPangkalanTransaction(){
+        return $this->hasMany(Transaksi::class, 'pangkalan_id', 'id');
+    }
 }
