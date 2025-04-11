@@ -23,6 +23,7 @@ use App\Livewire\Index;
 
 Route::get('/excel', [AutomationController::class, 'index'])->name('pup-index');
 Route::post('/excel', [AutomationController::class, 'upload'])->name('pup-upload');
+Route::get('/tx', [AutomationController::class, 'tx'])->name('pup-tx');
 
 Route::get('/', [AuthController::class, 'loginForm'])->name('loginForm');
 Route::post('/', [AuthController::class, 'login'])->name('login');
