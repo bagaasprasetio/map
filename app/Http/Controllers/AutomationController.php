@@ -97,7 +97,7 @@ class AutomationController extends Controller
 
         // Filter NIK dalam 7 hari terakhir
         $processedNik = array_diff($arraySlice, $usedNik);
-        
+
         // Reset index biar clean
         $filteredData = array_values($processedNik);
 
@@ -163,7 +163,7 @@ class AutomationController extends Controller
 
         DB::beginTransaction();
         try {
-            
+
             // $pangkalan->update([
             //     'transaction_quota' => $pangkalan->transaction_quota - $jmlValidNik
             // ]);
@@ -226,6 +226,8 @@ class AutomationController extends Controller
 
     public function upload(Request $request)
     {
+        // ini_set('max_execution_time', 3600);
+
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv|max:2048'
         ]);
@@ -304,5 +306,10 @@ class AutomationController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'File berhasil diunggah dan diproses.');
+    }
+
+    public function tx(Request $request)
+    {
+        return view('thankyou'); // langsung render halaman
     }
 }
