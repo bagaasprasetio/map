@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Transaksi;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Auth;
+
 
 class TransaksiController extends Controller
 {
@@ -38,7 +40,10 @@ class TransaksiController extends Controller
     }
 
     public function getAll(){
-        $all = Transaksi::with('user', 'pangkalan')->orderBy('transaction_date', 'desc');
+        $all = Transaksi::with('user', 'pangkalan')
+                        ->orderBy('transaction_date', 'desc')
+                        ->where('user_id', Auth::user()->id)
+                        ->get();
 
         return DataTables::of($all)
             ->addIndexColumn()
