@@ -209,9 +209,36 @@ async function cekNik(browser, nikList, redirectBackURL, inputTrx, nikType) {
                             }
 
                             await clickWithDelay(page, '[data-testid="btnCheckOrder"]', '🛒 Cek Pesanan');
-                            // await clickWithDelay(page, '[data-testid="btnPay"]', '💳 Proses Transaksi');
-                            // await clickWithDelay(page, 'a[href="/merchant/app/verification-nik"]', '🏠 Ke Beranda');
-                            // validNikList.push(nik);
+                            await clickWithDelay(page, '[data-testid="btnPay"]', '💳 Proses Transaksi');
+
+                            await new Promise(resolve => setTimeout(resolve, 500)); // Delay kecil antara klik
+                            console.log('Cari Modal!');
+
+                            await page.waitForSelector('.styles_container__KLRJc.styles_red__IKcIW', { timeout: 5000 });
+                            const modalText = await page.$eval('.styles_container__KLRJc.styles_red__IKcIW', el => el.innerText);
+                            console.log('Modal muncul dengan isi:', modalText);
+
+                            // if (modalExists) {
+                            //     // Ambil teks di dalam modal
+                            //     const modalText = await page.evaluate(el => el.innerText, modalHandle);
+
+                            //     console.log('Modal ditemukan!');
+                            //     console.log('Isi modal:', modalText);
+
+                            // Cek isi teksnya
+                            if (
+                                modalText.includes('Mohon maaf diluar batas.') ||
+                                modalText.includes('Mohon maaf, terlalu banyak permintaan.') ||
+                                modalText.includes('Transaksi melebihi stok yang dapat dijual')
+                            ) {
+                                console.log('Modal terdeteksi! Menghentikan proses...');
+                                await browser.close();
+                                return;
+                            }
+                            // }
+
+                            await clickWithDelay(page, 'a[href="/merchant/app/verification-nik"]', '🏠 Ke Beranda');
+                            validNikList.push(nik);
                         } else {
                             console.log(`❌ NIK ${nik}: Transaksi tidak dapat dilakukan karena batas LPG tercapai.`);
                             await page.goto(redirectBackURL, { waitUntil: "domcontentloaded" }); // Kembali ke halaman sebelumnya
