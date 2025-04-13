@@ -62,10 +62,20 @@ async function cekNik(browser, nikList, redirectBackURL, inputTrx, nikType) {
                     } else if (text.includes(messages.registered)) {
                         console.log(`🟢 NIK ${nik}: Terdaftar`);
 
-                        let radioButton = await modal.$('[data-testid="radio-Usaha Mikro"]');
-                        if (!radioButton) {
+                        // OPEN 13-april-25 || fixing radio button
+                        let radioButton;
+                        if (nikType === 'UM') {
+                            radioButton = await modal.$('[data-testid="radio-Usaha Mikro"]');
+                        } else if (nikType === 'RT') {
                             radioButton = await modal.$('[data-testid="radio-Rumah Tangga"]');
                         }
+
+                        // let radioButton = await modal.$('[data-testid="radio-Usaha Mikro"]');
+                        // if (!radioButton) {
+                        //     radioButton = await modal.$('[data-testid="radio-Rumah Tangga"]');
+                        // }
+                        // CLOSE 13-april-25 || fixing radio button
+
 
                         if (radioButton) {
                             console.log(`✅ Radio button ditemukan, mencoba klik...`);
@@ -116,7 +126,6 @@ async function cekNik(browser, nikList, redirectBackURL, inputTrx, nikType) {
                                     }
                                 }
                             }
-
                         } else {
                             console.log(`⚠️ Radio button "Usaha Mikro" tidak ditemukan.`);
                         }

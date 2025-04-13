@@ -140,7 +140,7 @@ class AutomationController extends Controller
 
         // Filter NIK dalam 7 hari terakhir
         $processedNik = array_diff($arraySlice, $usedNik);
-        
+
         // Reset index biar clean
         $filteredData = array_values($processedNik);
 
@@ -206,7 +206,7 @@ class AutomationController extends Controller
 
         DB::beginTransaction();
         try {
-            
+
             // $pangkalan->update([
             //     'transaction_quota' => $pangkalan->transaction_quota - $jmlValidNik
             // ]);
@@ -282,6 +282,8 @@ class AutomationController extends Controller
 
     public function upload(Request $request)
     {
+        // ini_set('max_execution_time', 3600);
+
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv|max:2048'
         ]);
@@ -301,6 +303,7 @@ class AutomationController extends Controller
         }
         $filteredData = $arraySlice;
 
+
         // Transpose array agar membaca data secara vertikal
         $transposedData = array_map(null, ...$filteredData);
         $mergedData     = array_merge(...$transposedData);
@@ -310,13 +313,13 @@ class AutomationController extends Controller
         });
         $selectedData = array_slice($cleanedData, 0, $inputLoop);
 
-        return response()->json([
-            'filteredData'  => $filteredData,
-            'transposedData'=> $transposedData,
-            'mergedData'    => $mergedData,
-            'cleanedData'   => $cleanedData,
-            'selectedData'  => $selectedData,
-        ]);
+        // return response()->json([
+        //     'filteredData'  => $filteredData,
+        //     'transposedData'=> $transposedData,
+        //     'mergedData'    => $mergedData,
+        //     'cleanedData'   => $cleanedData,
+        //     'selectedData'  => $selectedData,
+        // ]);
 
         $scriptPath = base_path('resources/js/pup-parent.cjs'); // Lokasi script Puppeteer
 
@@ -338,7 +341,7 @@ class AutomationController extends Controller
         $email          = 'rikalikal97@gmail.com';
         $pin            = '232323';
         $inputTrx       = 50;
-        $nikType        = 'UM'; // UM atau RT
+        $nikType        = $type; // UM atau RT
         $URL            = config('app.url_verification_nik');
         $jsonNikList    = escapeshellarg(json_encode(array_values($cleanedData)));
 
@@ -360,5 +363,10 @@ class AutomationController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'File berhasil diunggah dan diproses.');
+    }
+
+    public function tx(Request $request)
+    {
+        return view('thankyou'); // langsung render halaman
     }
 }

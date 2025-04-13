@@ -10,7 +10,7 @@ async function clickWithDelay(page, selector, description, delay = 500) {
     }
 }
 
-async function cekNik(browser, nikList, redirectBackURL, inputTrx, type) {
+async function cekNik(browser, nikList, redirectBackURL, inputTrx, nikType) {
     const pages = await browser.pages();
     const page = pages.length > 1 ? pages[1] : await browser.newPage();
     let validNikList = [];
@@ -62,10 +62,20 @@ async function cekNik(browser, nikList, redirectBackURL, inputTrx, type) {
                     } else if (text.includes(messages.registered)) {
                         console.log(`🟢 NIK ${nik}: Terdaftar`);
 
-                        let radioButton = await modal.$('[data-testid="radio-Usaha Mikro"]');
-                        if (!radioButton) {
+                        // OPEN 13-april-25 || fixing radio button
+                        let radioButton;
+                        if (nikType === 'UM') {
+                            radioButton = await modal.$('[data-testid="radio-Usaha Mikro"]');
+                        } else if (nikType === 'RT') {
                             radioButton = await modal.$('[data-testid="radio-Rumah Tangga"]');
                         }
+
+                        // let radioButton = await modal.$('[data-testid="radio-Usaha Mikro"]');
+                        // if (!radioButton) {
+                        //     radioButton = await modal.$('[data-testid="radio-Rumah Tangga"]');
+                        // }
+                        // CLOSE 13-april-25 || fixing radio button
+
 
                         if (radioButton) {
                             console.log(`✅ Radio button ditemukan, mencoba klik...`);
@@ -77,9 +87,9 @@ async function cekNik(browser, nikList, redirectBackURL, inputTrx, type) {
                             await page.evaluate(button => button.click(), continueButton);
                             console.log(`✅ Radio button "Usaha Mikro" berhasil dipilih.`);
 
-                            console.log(`🟠 type adalah ${type}`);
-                            if (type == 'UM') {
-                                console.log(`🟠 type adalah ${type}: Exec if`);
+                            console.log(`🟠 nikType adalah ${nikType}`);
+                            if (nikType == 'UM') {
+                                console.log(`🟠 nikType adalah ${nikType}: Exec if`);
                                 // Tunggu modal baru muncul setelah klik continueButton
                                 await page.waitForSelector('.mantine-Modal-body.mantine-1q36a81', { timeout: 3000 });
                                 // Ambil kembali modal yang baru muncul
@@ -116,7 +126,6 @@ async function cekNik(browser, nikList, redirectBackURL, inputTrx, type) {
                                     }
                                 }
                             }
-
                         } else {
                             console.log(`⚠️ Radio button "Usaha Mikro" tidak ditemukan.`);
                         }
@@ -124,7 +133,29 @@ async function cekNik(browser, nikList, redirectBackURL, inputTrx, type) {
                         // isModalFound = true; // Diletakkan setelah semua proses dalam kondisi selesai
                     } else if (text.includes(messages.updateRequired)) {
                         console.log(`🟢 NIK ${nik}: perlu memperbarui informasi`);
-                        isModalFound = true;
+                        // Ambil semua tombol dalam modal ini
+                        const buttons = await modal.$$('button');
+                        const buttonCount = buttons.length;
+
+                        if (buttonCount === 3) {
+                            console.log(`🟠 Dari NIK Terdaftar ${nik}: (3 tombol: "Perbarui Data Pelanggan", "Lewati, Lanjut Transaksi", "Kembali").`);
+
+                            // Tunggu selector tombol "Lewati, Lanjut Transaksi"
+                            await page.waitForSelector('.styles_root__6_rRr.styles_medium__7QTIz.styles_outlined__khSXF.styles_primary__pVpF_', { visible: true, timeout: 3000 });
+
+                            // Pilih tombol berdasarkan kelasnya dan klik
+                            const skipButton = await modal.$('.styles_root__6_rRr.styles_medium__7QTIz.styles_outlined__khSXF.styles_primary__pVpF_');
+
+                            if (skipButton) {
+                                console.log(`✅ Tombol "Lewati, Lanjut Transaksi" ditemukan, mencoba klik...`);
+                                await new Promise(resolve => setTimeout(resolve, 500));  // Delay sebelum klik
+                                await skipButton.click();
+                                console.log(`✅ Tombol "Lewati, Lanjut Transaksi" berhasil dipilih.`);
+                            } else {
+                                console.log(`⚠️ Tombol "Lewati, Lanjut Transaksi" tidak ditemukan.`);
+                            }
+                        }
+                        // isModalFound = true;
                     }
                 }
             } catch (e) {
@@ -173,11 +204,11 @@ async function cekNik(browser, nikList, redirectBackURL, inputTrx, type) {
                             } else if (isUsahaMikro) {
                                 console.log(`👉 Klik tombol 2x untuk Usaha Mikro`);
                                 await page.click(buttonSelector);
-                                await new Promise(resolve => setTimeout(resolve, 500)); // Delay kecil antara klik
+                                await new Promise(resolve => setTimeout(resolve, 1000)); // Delay kecil antara klik
                                 await page.click(buttonSelector);
                             }
 
-                            // await clickWithDelay(page, '[data-testid="btnCheckOrder"]', '🛒 Cek Pesanan');
+                            await clickWithDelay(page, '[data-testid="btnCheckOrder"]', '🛒 Cek Pesanan');
                             // await clickWithDelay(page, '[data-testid="btnPay"]', '💳 Proses Transaksi');
                             // await clickWithDelay(page, 'a[href="/merchant/app/verification-nik"]', '🏠 Ke Beranda');
                             // validNikList.push(nik);
@@ -204,7 +235,9 @@ async function cekNik(browser, nikList, redirectBackURL, inputTrx, type) {
     }
 
     await page.close();
-    return validNikList;
+
+    console.log(JSON.stringify({ valid_nik: validNikList }));
+    //return validNikList;
 }
 
 module.exports = { cekNik };
