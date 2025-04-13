@@ -209,9 +209,9 @@ async function cekNik(browser, nikList, redirectBackURL, inputTrx, nikType) {
                             }
 
                             await clickWithDelay(page, '[data-testid="btnCheckOrder"]', '🛒 Cek Pesanan');
-                            // await clickWithDelay(page, '[data-testid="btnPay"]', '💳 Proses Transaksi');
-                            // await clickWithDelay(page, 'a[href="/merchant/app/verification-nik"]', '🏠 Ke Beranda');
-                            // validNikList.push(nik);
+                            await clickWithDelay(page, '[data-testid="btnPay"]', '💳 Proses Transaksi');
+                            await clickWithDelay(page, 'a[href="/merchant/app/verification-nik"]', '🏠 Ke Beranda');
+                            validNikList.push(nik);
                         } else {
                             console.log(`❌ NIK ${nik}: Transaksi tidak dapat dilakukan karena batas LPG tercapai.`);
                             await page.goto(redirectBackURL, { waitUntil: "domcontentloaded" }); // Kembali ke halaman sebelumnya
