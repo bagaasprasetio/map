@@ -121,7 +121,7 @@ class AutomationController extends Controller
 
         $nikType = $request->nik_type;// NIKTYPE
         $usedNik = Transaksi::where('nik_type', $nikType)
-                            ->whereRaw('DATE_ADD(transaction_date, INTERVAL 7 DAY) >= ?', [Carbon::now()])
+                            ->whereRaw('DATE_ADD(transaction_date, INTERVAL 6 DAY) >= ?', [Carbon::now()])
                             ->pluck('nik')
                             ->toArray();
         $arraySlice = '';
@@ -266,7 +266,7 @@ class AutomationController extends Controller
 
     public function getUsedNik(){
         $usedNik = Transaksi::where('nik_type', 'RT')
-                            ->whereRaw('DATE_ADD(transaction_date, INTERVAL 7 DAY) >= ?', [Carbon::now()])
+                            ->whereRaw('DATE_ADD(transaction_date, INTERVAL 6 DAY) >= ?', [Carbon::now()])
                             ->pluck('nik')
                             ->toArray();
 
@@ -340,7 +340,7 @@ class AutomationController extends Controller
 
         $email          = 'rikalikal97@gmail.com';
         $pin            = '232323';
-        $inputTrx       = 50;
+        $inputTrx       = 100;
         $nikType        = $type; // UM atau RT
         $URL            = config('app.url_verification_nik');
         $jsonNikList    = escapeshellarg(json_encode(array_values($cleanedData)));

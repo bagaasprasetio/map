@@ -6,7 +6,7 @@
         <i class="fa fa-bars"></i>
     </button>
 
-    <img src="{{ asset('img/subsidi-tepat.webp') }}" style="width: 50px; height: 50px; object-fit: cover;">
+    <!-- <img src="{{ asset('img/subsidi-tepat.webp') }}" style="width: 50px; height: 50px; object-fit: cover;"> -->
 
     <!-- Topbar Navbar -->
     <ul class="navbar-nav ml-auto">

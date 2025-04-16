@@ -115,7 +115,7 @@
                     { data: 'email', name: 'email' },
                     { 
                         data: 'pangkalan.pangkalan_name', 
-                        name: 'pangkalan_name',
+                        name: 'pangkalan.pangkalan_name',
                         render: function(data, type, row){
                             if (data){
                                 return data;
@@ -124,7 +124,9 @@
                         }
                      },
                     { 
-                        data: 'subscriptions', 
+                        data: 'subscriptions',
+                        searchable: false,
+                        orderable: false,
                         render: function(data){
                             let today = new Date();
                             today.setHours(0,0,0,0);

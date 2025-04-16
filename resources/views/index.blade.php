@@ -94,10 +94,7 @@
                 </div>
             </div>
         </div>
-
-        @endif
-
-        @if (auth()->user()->role === 'sa')
+        
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-warning shadow h-100 py-2">
                 <div class="card-body">
@@ -125,6 +122,7 @@
                 </div>
             </div>
         </div>
+
         @endif
 
     </div>
@@ -150,7 +148,7 @@
                         <input type="text" class="form-control" id="pangkalan_email" name="pangkalan_email" placeholder="Ketik di sini" readonly>
                     </div>
                     <div class="col-12 mt-3">
-                        <label for="inputEmail4" class="form-label">PIN (6 Digit)</label>
+                        <label for="inputEmail4" class="form-label">PIN Merchant (6 Digit)</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="pangkalan_pin" name="pangkalan_pin" placeholder="Ketik di sini">
                             <button class="btn btn-outline-secondary toggle-password" type="button">
