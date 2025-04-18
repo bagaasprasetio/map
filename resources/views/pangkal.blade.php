@@ -126,7 +126,7 @@
                 serverSide: true,
                 ajax: "{{ route('pangkalan.getall') }}",
                 columns: [
-                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, serachable: false },
+                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                     { data: 'pangkalan_name' },
                     { data: 'pangkalan_address' },
                     { data: 'transaction_quota' },

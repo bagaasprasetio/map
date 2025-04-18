@@ -66,16 +66,22 @@
                         </div>
                         <div class="col-12 mt-2">
                             <label for="inputState" class="form-label">Role User</label>
+                            @if (Auth()->user()->role === 'sa')
                             <select id="user_role" class="form-control" name="user_role">
                                 <option value="NaN" selected>Pilih di sini</option>
                                 <option value="sa">Super Admin</option>
                                 <option value="ao">Admin Operasional</option>
                                 <option value="ap">Admin Pangkalan</option>
                             </select>
+                            @else
+                            <select id="user_role" class="form-control" name="user_role" disabled>
+                                <option value="ap">Admin Pangkalan</option>
+                            </select>
+                            @endif
                             <div id="user_role_error" class="text-danger text-sm d-none"></div>
                         </div>
                         <div class="col-12 mt-2" id="user_password_section">
-                            <label for="inputPassword4" class="form-label">Set Password</label>
+                            <label for="inputPassword4" class="form-label">Password Member</label>
                             <div class="input-group">
                                 <input type="password" class="form-control" id="user_password" name="user_password" placeholder="Ketik di sini">
                                 <button class="btn btn-outline-secondary toggle-password" type="button">
@@ -99,7 +105,7 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Ubah Password</h5>
+                    <h5 class="modal-title" id="exampleModalLabel">Ubah Password Member</h5>
                     <button class="close" type="button" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">×</span>
                     </button>
@@ -107,7 +113,7 @@
                 <form>
                     <div class="row modal-body">
                         <div class="col-12">
-                        <label for="inputPassword4" class="form-label">Masukkan Password Baru</label>
+                        <label for="inputPassword4" class="form-label">Masukkan Password Member Baru</label>
                             <div class="input-group">
                                 <input type="password" class="form-control" id="user_change_password" name="user_change_password" placeholder="Ketik di sini">
                                 <button class="btn btn-outline-secondary toggle-password" type="button">
@@ -120,7 +126,7 @@
                     </div>
                     <div class="modal-footer d-flex justify-content-between">
                         <button class="btn btn-outline" type="button" data-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary" id="changePassSubmitBtn">Ubah Password</button>
+                        <button type="submit" class="btn btn-primary" id="changePassSubmitBtn">Ubah Password Member</button>
                     </div>
                 </form>
             </div>
@@ -143,7 +149,7 @@
                 serverSide: true,
                 ajax: "{{ route('user.getall') }}",
                 columns: [
-                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, serachable: false },
+                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                     { data: 'user_name' },
                     { data: 'email' },
                     { 
@@ -154,7 +160,7 @@
                                 'ap': 'Admin Pangkalan',
                                 'ao': 'Admin Operasional'
                             };
-                            return roles[data] || 'Entitas tidak dikenal';
+                            return roles[data] || 'User level tidak dikenal';
                         }
                      },
                     { data: 'action' }

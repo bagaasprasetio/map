@@ -2,7 +2,7 @@
 
     <!-- Sidebar - Brand -->
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
-        <div class="sidebar-brand-text mx-3">Project MAP</div>
+        <div class="sidebar-brand-text mx-3">REBOOT APP</div>
     </a>
 
     <!-- Nav Item - Dashboard -->
@@ -22,18 +22,18 @@
     
     @endif
 
-    @if (auth()->user()->role === 'sa')
+    @if (auth()->user()->role === 'sa' || auth()->user()->role === 'ao')
 
     <li class="nav-item {{ request()->routeIs('pangkalan.master') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('pangkalan.master') }}">
             <i class="fas fa-fw fa-building"></i>
-            <span>Kelola Data Pangkalan</span></a>
+            <span>Kelola Pangkalan</span></a>
     </li>
 
     <li class="nav-item {{ request()->routeIs('user.master') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('user.master') }}">
             <i class="fas fa-fw fa-user-alt"></i>
-            <span>Kelola Data User</span></a>
+            <span>Kelola Pengguna</span></a>
     </li>
 
     <li class="nav-item {{ request()->routeIs('subs.master') ? 'active' : '' }}">

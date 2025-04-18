@@ -94,10 +94,7 @@
                 </div>
             </div>
         </div>
-
-        @endif
-
-        @if (auth()->user()->role === 'sa')
+        
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-warning shadow h-100 py-2">
                 <div class="card-body">
@@ -125,6 +122,7 @@
                 </div>
             </div>
         </div>
+
         @endif
 
     </div>
@@ -150,7 +148,7 @@
                         <input type="text" class="form-control" id="pangkalan_email" name="pangkalan_email" placeholder="Ketik di sini" readonly>
                     </div>
                     <div class="col-12 mt-3">
-                        <label for="inputEmail4" class="form-label">PIN (6 Digit)</label>
+                        <label for="inputEmail4" class="form-label">PIN Merchant (6 Digit)</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="pangkalan_pin" name="pangkalan_pin" placeholder="Ketik di sini">
                             <button class="btn btn-outline-secondary toggle-password" type="button">
@@ -223,6 +221,10 @@
 <script>
     $(document).ready(function(){
 
+        let countdownInterval = null;
+        let progressChecker = null;
+        let isPolling = false;
+
         $.ajaxSetup({
             headers: {
                 "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content")
@@ -287,6 +289,10 @@
                 $('#' + this.id + '_error').addClass('d-none').text('');
             });
 
+            // Hentikan interval sebelumnya jika ada
+            if (countdownInterval) clearInterval(countdownInterval);
+            if (progressChecker) clearInterval(progressChecker);
+
             $.ajax({
                 url: "{{ route('automation.check') }}",
                 type: "post",
@@ -294,6 +300,9 @@
                 processData: false,  // Harus false biar FormData dikirim beneran
                 data: formData,
                 success: function(response){
+                    let eta = response.eta;
+                    let token = response.token;
+
                     Swal.fire({
                         html: `
                             <div class="d-flex justify-content-center" id="statusContainer" style="display: none;">
@@ -309,14 +318,57 @@
                         allowEscapeKey: false,
                         showConfirmButton: false,
                         didOpen: () => {
-                            let eta = response.eta; // dari response
                             updateEtaText(eta);
-                            countdown = setInterval(() => {
+                            // clearInterval(countdownInterval);
+                            // clearInterval(progressChecker);
+
+                            countdownInterval = setInterval(() => {
                                 eta--;
                                 updateEtaText(eta);
+
+                                if (eta <= 0) {
+                                    clearInterval(countdownInterval);
+                                    countdownInterval = null;
+                                }
                             }, 1000);
 
-                            getProgress();
+                            progressChecker = setInterval(() => {
+                                if (!isPolling) {
+                                    isPolling = true;
+                                    
+                                    $.ajax({
+                                        url: "{{ route('automation.getprogress') }}",
+                                        type: "GET",
+                                        data: { token },
+                                        timeout: 3000, // timeout setelah 3 detik
+                                        success: function(data) {
+                                            console.log('Polling result:', data);
+                                            
+                                            if (data.done === true || data.done === 'true') {
+                                                // Proses selesai, bersihkan semua interval
+                                                if (countdownInterval) {
+                                                    clearInterval(countdownInterval);
+                                                    countdownInterval = null;
+                                                }
+                                                
+                                                clearInterval(progressChecker);
+                                                progressChecker = null;
+                                                
+                                                $('#etaText').text('✅ Proses selesai!');
+                                                
+                                                // // Opsional: kirim sinyal ke server untuk membersihkan token dari cache
+                                                
+                                            }
+                                            
+                                            isPolling = false;
+                                        },
+                                        error: function() {
+                                            // Pastikan isPolling di-reset meskipun terjadi error
+                                            isPolling = false;
+                                        }
+                                    });
+                                }
+                            }, 5000);
                         }
                     });
 
@@ -340,6 +392,10 @@
                 }
             });
         });
+
+        function updateEtaText(eta) {
+            document.getElementById('etaText').innerText = eta > 0 ? `Estimasi selesai dalam ${eta} detik...` : 'Menunggu konfirmasi...';
+        }
 
         function executeBot(formData){
             $.ajax({
@@ -373,43 +429,46 @@
             });
         }
 
-        let progressChecker;
+        // Tambahkan event listener untuk cleanup saat meninggalkan halaman
+        $(window).on('beforeunload', function() {
+            if (countdownInterval) clearInterval(countdownInterval);
+            if (progressChecker) clearInterval(progressChecker);
+        });
 
-        function startProcess() {
-            const inputTrx = $('#input_transaction').val(); // contoh jumlah input
+        // function startProcess() {
 
-            fetch(`{{ route('automation.check') }}`, {
-                method: 'POST',
-                body: JSON.stringify({ inputTrx })
-            })
-            .then(res => res.json())
-            .then(data => {
-                let eta = data.eta;
-                document.getElementById('statusContainer').style.display = 'flex';
-                updateEtaText(eta);
+        //     const inputTrx = $('#input_transaction').val(); // contoh jumlah input
+
+        //     fetch(`{{ route('automation.check') }}`, {
+        //         method: 'POST',
+        //         body: JSON.stringify({ inputTrx })
+        //     })
+        //     .then(res => res.json())
+        //     .then(data => {
+        //         let eta = data.eta;
+        //         const token = data.token;
+
+        //         document.getElementById('statusContainer').style.display = 'flex';
+        //         updateEtaText(eta);
                 
-                countdown = setInterval(() => {
-                    eta--;
-                    updateEtaText(eta);
-                }, 1000);
+        //         const countdown = setInterval(() => {
+        //             eta--;
+        //             updateEtaText(eta);
+        //         }, 1000);
 
-                statusChecker = setInterval(() => {
-                fetch(`{{ route('automation.getprogress') }}`)
-                    .then(res => res.json())
-                    .then(data => {
-                    if (data.done) {
-                        clearInterval(countdown);
-                        clearInterval(statusChecker);
-                        document.getElementById('etaText').innerText = 'Proses selesai';
-                    }
-                    });
-                }, 1000);
-            });
-        }
-
-        function updateEtaText(eta) {
-            document.getElementById('etaText').innerText = eta > 0 ? `Estimasi selesai dalam ${eta} detik...` : 'Menunggu konfirmasi...';
-        }
+        //         const statusChecker = setInterval(() => {
+        //         fetch(`{{ route('automation.getprogress') }}?token=${token}`)
+        //             .then(res => res.json())
+        //             .then(data => {
+        //             if (data.done) {
+        //                 clearInterval(countdown);
+        //                 clearInterval(statusChecker);
+        //                 document.getElementById('etaText').innerText = 'Proses selesai';
+        //             }
+        //             });
+        //         }, 1000);
+        //     });
+        // }
 
         // function getProgress(){
         //     fetch(`{{ route('automation.getprogress') }}`)

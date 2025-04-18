@@ -3,7 +3,11 @@
 <body class="bg-light">
     <div class="container py-4">
         <div class="d-flex justify-content-center">
-            <img src="{{ asset('img/subsidi-tepat.webp') }}" style="width: 90px; height: 90px; object-fit: cover;">
+            <!-- <img src="{{ asset('img/subsidi-tepat.webp') }}" style="width: 90px; height: 90px; object-fit: cover;"> -->
+             <div class="d-flex align-items-center">
+                <i class="fas fa-robot fa-3x text-gray-400 mb-3"></i>
+                <h5 class="font-weight-bold ml-2">REBOOT APP</h5>
+             </div>
         </div>
         <div class="d-flex justify-content-center mt-4">
             <div class="col-xl-6 col-lg-6 col-md-9">
@@ -20,7 +24,7 @@
                                     <div id="email_error" class="text-danger"></div>
                                 </div>
                                 <div class="mb-4">
-                                    <label for="formGroupExampleInput" class="form-label">Password</label>
+                                    <label for="formGroupExampleInput" class="form-label">Password Member</label>
                                     <div class="input-group">
                                         <input type="password" class="form-control" id="password" name="password" placeholder="Ketik di sini">
                                         <button class="btn btn-outline-secondary toggle-password" type="button">

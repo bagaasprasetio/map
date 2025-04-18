@@ -56,7 +56,7 @@ Route::middleware(['role:ao'])->group(function() {
     Route::get('/operasional', [OperasionalController::class, 'index'])->name('ao.index');
 });
 
-Route::middleware(['role:sa'])->group(function() {
+Route::middleware(['role:sa,ao'])->group(function() {
     Route::get('/admin', [SuperAdminController::class, 'index'])->name('sa.index');
     Route::get('/subs-master', [SuperAdminController::class, 'subsMaster'])->name('subs.master');
 

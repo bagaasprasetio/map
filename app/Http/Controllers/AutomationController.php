@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class AutomationController extends Controller
 {
@@ -40,19 +41,60 @@ class AutomationController extends Controller
         }
 
         $inputTrx = $request->input_transaction;
-        $estimatedTime = $inputTrx * 36;
-        Cache::put('bot_done', false);
+        $eta = $inputTrx * 36;
 
-        // Trigger async job atau proses di background (dummy simulation untuk sekarang)
-        dispatch(function () use ($inputTrx) {
-            sleep($inputTrx * 18); // simulasi proses
-            Cache::put('bot_done', true);
+        // Generate unique token buat identifikasi proses
+        $token = uniqid('bot_', true);
+        Cache::put("bot_done_$token", false, now()->addMinutes(30)); // TTL optional
+
+        // Simulasi proses async
+        dispatch(function () use ($token, $eta) {
+            sleep($eta);
+            Cache::put("bot_done_$token", true, now()->addMinutes(30));
         });
+
+        // $userId = Auth::id();
+        // $batchId = now()->timestamp;
+
+        // $statusKey = "bot_status_{$userId}";
+        // $batchKey = "bot_batch_{$userId}";
+
+        // // Simpan batch ID baru
+        // Cache::put($batchKey, $batchId, now()->addMinutes(30));
+        // Cache::put($statusKey, 'processing', now()->addMinutes(30));
+        
+        // //$cacheKey = 'bot_done_'.Auth::user()->id;
+        // //Cache::forget($cacheKey);
+        // //Cache::put($cacheKey, false);
+
+        // try {
+        //     dispatch(function () use ($inputTrx, $statusKey, $batchKey, $batchId) {
+        //         sleep($inputTrx * 36); // simulasi proses
+                 //Cache::put($cacheKey, true);
+
+        //         if (Cache::get($batchKey) == $batchId) {
+        //             Cache::put($statusKey, 'done', now()->addMinutes(30));
+        //         }
+        //     });
+        // } catch (\Exception $e) {
+        //     Cache::put($cacheKey, 'error'); // atau false
+        // }
+
+        // Bikin token unik buat proses ini
+        // $token = now()->timestamp . '_' . Str::random(5);
+        // $cacheKey = "bot_status_$token";
+
+        // Cache::put($cacheKey, 'processing', now()->addMinutes(30));
+
+        // dispatch(function () use ($inputTrx, $cacheKey) {
+        //     sleep($inputTrx * 36);
+        //     Cache::put($cacheKey, 'done', now()->addMinutes(30));
+        // });
 
         return response()->json([
             'status'    => 'success',
-            'input_trx' => $request->input_transaction,
-            'eta'       => $estimatedTime
+            'eta'       => $eta,
+            'token'     => $token
         ], 200);
     }
 
@@ -73,12 +115,13 @@ class AutomationController extends Controller
 
 
     public function run(Request $request){
+        ini_set('max_execution_time', 3600); // dalam detik
         $data           = Excel::toArray(new MultipleExcelImport, $request->file('excel_file'));
         // Hilangkan baris pertama (biasanya header)
 
         $nikType = $request->nik_type;// NIKTYPE
         $usedNik = Transaksi::where('nik_type', $nikType)
-                            ->whereRaw('DATE_ADD(transaction_date, INTERVAL 7 DAY) >= ?', [Carbon::now()])
+                            ->whereRaw('DATE_ADD(transaction_date, INTERVAL 6 DAY) >= ?', [Carbon::now()])
                             ->pluck('nik')
                             ->toArray();
         $arraySlice = '';
@@ -202,15 +245,28 @@ class AutomationController extends Controller
         ]);
     }
 
-    public function getProgress(){
+    public function getProgress(Request $request){
+
+        $token = $request->query('token'); // dari frontend
+        //$done = Cache::get("bot_done_$token", false);
+
+        if (!$token) {
+            return response()->json(['error' => 'Invalid token'], 400);
+        }
+        
+        // Gunakan remember untuk menghindari pembacaan berulang dalam interval waktu singkat
+        $done = Cache::remember("bot_status_$token", 3, function() use ($token) {
+            return Cache::get("bot_done_$token", false);
+        });
+
         return response()->json([
-            'done' => Cache::get('bot_done', false)
+            'done' => $done
         ]);
     }
 
     public function getUsedNik(){
         $usedNik = Transaksi::where('nik_type', 'RT')
-                            ->whereRaw('DATE_ADD(transaction_date, INTERVAL 7 DAY) >= ?', [Carbon::now()])
+                            ->whereRaw('DATE_ADD(transaction_date, INTERVAL 6 DAY) >= ?', [Carbon::now()])
                             ->pluck('nik')
                             ->toArray();
 
@@ -284,7 +340,7 @@ class AutomationController extends Controller
 
         $email          = 'rikalikal97@gmail.com';
         $pin            = '232323';
-        $inputTrx       = 50;
+        $inputTrx       = 100;
         $nikType        = $type; // UM atau RT
         $URL            = config('app.url_verification_nik');
         $jsonNikList    = escapeshellarg(json_encode(array_values($cleanedData)));

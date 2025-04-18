@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+
 
 class UserController extends Controller
 {
@@ -86,7 +88,14 @@ class UserController extends Controller
 
 
     public function getAll(){
-        $all = User::orderBy('created_at', 'desc');
+        $auth = Auth::user()->role;
+        
+        if ($auth === 'sa'){
+            $all = User::orderBy('created_at', 'desc');
+        } else {
+            $all = User::where('role', 'ap');
+        }
+        
         return DataTables::of($all)
             ->addIndexColumn()
             ->addColumn('action', function($row) {
