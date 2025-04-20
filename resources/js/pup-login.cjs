@@ -6,7 +6,6 @@ async function login(email, password) {
         headless: false,
         args: [
             '--disable-notifications',
-            '--start-maximized',
             '--no-sandbox',
             '--disable-setuid-sandbox'
         ]
@@ -17,8 +16,8 @@ async function login(email, password) {
 
 
     await page.goto('https://subsiditepatlpg.mypertamina.id/merchant/auth/login', { waitUntil: 'networkidle2' });
-    await page.type('#mantine-r0', email);
-    await page.type('#mantine-r1', password);
+    await page.type('#mantine-r0', email,{ delay: 200 });
+    await page.type('#mantine-r1', password,{ delay: 200 });
     await new Promise(resolve => setTimeout(resolve, 500));
     await page.click('button[type="submit"]');
 
@@ -55,6 +54,7 @@ async function login(email, password) {
             }
         });
     }
+    await new Promise(resolve => setTimeout(resolve, 10000)); // Tunggu 5 detik
 
     // console.log('Login berhasil');
     return browser;
