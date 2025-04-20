@@ -169,6 +169,7 @@ class AutomationController extends Controller
         $output         = shell_exec("node $scriptPath $email $pin $jsonNikList $nikType $URL $inputTrx 2>&1");
 
         preg_match('/(\{(?:[^{}]|(?1))*\})/s', $output, $matches);
+        //preg_match('/\{.*\}/s', $output, $matches);
         $jsonPart = $matches[0] ?? null;
         $outputArray = json_decode($jsonPart, true);
 

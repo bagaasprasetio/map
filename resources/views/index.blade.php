@@ -360,7 +360,7 @@
                                     <span class="sr-only">Loading...</span>
                                 </div>
                             </div>
-                            <div>Bot sedang dalam proses menginput data ke server. Mohon untuk TIDAK LOGIN ke akun merchant dan tidak menganggu jalannya bot.</div>
+                            <div>Bot sedang dalam proses menginput data ke MAP. Mohon untuk TIDAK LOGIN ke akun merchant dan tidak menganggu jalannya bot.</div>
                             <div id="etaText" class="mt-3"></div>
                         `,
                         title: "Sedang Memproses",
