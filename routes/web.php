@@ -8,6 +8,9 @@ use App\Http\Controllers\PangkalanController;
 use App\Http\Controllers\OperasionalController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\AutomationController;
+use App\Http\Controllers\PuppeteerController;
+use App\Jobs\RunPuppeteerJob;
+use App\Jobs\SendEmailJob;
 use App\Livewire\Index;
 
 /*
@@ -21,6 +24,20 @@ use App\Livewire\Index;
 |
 */
 
+Route::get('/send-job/{email}', function ($email) {
+    // SendEmailJob::dispatch($email);
+    SendEmailJob::dispatch($email)->delay(now()->addSeconds(10));
+    return "Job untuk {$email} telah dimasukkan ke antrian.";
+});
+
+Route::get('/send-pup', function () {
+    RunPuppeteerJob::dispatch();
+    return "Job telah dimasukkan ke antrian.";
+});
+
+Route::get('/puppeteer', [PuppeteerController::class, 'index'])->name('puppeteer.index');
+Route::post('/puppeteer/run', [PuppeteerController::class, 'run'])->name('puppeteer.run');
+
 Route::get('/excel', [AutomationController::class, 'index'])->name('pup-index');
 Route::post('/excel', [AutomationController::class, 'upload'])->name('pup-upload');
 Route::get('/tx', [AutomationController::class, 'tx'])->name('pup-tx');
@@ -31,6 +48,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/subs/expired', [UserController::class, 'subsExpired'])->name('subs.expired');
 
 Route::get('/subs/expired', [UserController::class, 'subsExpired'])->name('subs.expired');
+
+Route::get('/job-status', [PangkalanController::class, 'checkJobStatus'])->name('check.job.status');
 
 Route::middleware(['role:ap,ao,sa'])->group(function() {
     Route::get('/transaksi-master', [TransaksiController::class, 'transaksiMaster'])->name('transaksi.master');

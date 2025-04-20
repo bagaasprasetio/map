@@ -57,7 +57,7 @@
             </div>
         </div>
 
-        <div class="col-12 mx-2" style="border: 3px dashed rgb(219, 219, 219); border-radius: 10px;">
+        {{--  <div class="col-12 mx-2" style="border: 3px dashed rgb(219, 219, 219); border-radius: 10px;">
             <div class="card-body">
                 <div class="row justify-content-center text-center py-3">
                     <div class="col-6">
@@ -74,7 +74,35 @@
                         data-target="#howItModal">Bagaimana cara kerjanya?</a>
                 </div>
             </div>
+        </div>  --}}
+        <div class="col-12 mx-2" style="border: 3px dashed rgb(219, 219, 219); border-radius: 10px;">
+            <div class="card-body">
+                <div class="row justify-content-center text-center py-3">
+                    <div class="col-6">
+                        <i class="fas fa-robot fa-3x text-secondary mb-3"></i>
+                        <h3 class="fw-bold text-dark mb-1">Mulai input data otomatis</h3>
+                        <button class="btn btn-primary shadow-sm mt-2" id="startBotBtn">Mulai Input Data</button>
+
+                        <!-- Status Bot Online/Offline -->
+                        <div class="text-center mt-3" id="status-indicator">
+                            <div id="botStatusBox" class="d-inline-flex align-items-center px-3 py-2 rounded-pill shadow-sm" style="background-color: #e6ffed; transition: background-color 0.3s ease;">
+                                <i class="fas fa-circle text-success mr-2" id="status-icon" style="font-size: 10px;"></i>
+                                <span id="status-text" class="font-weight-bold text-success" style="font-size: 14px;">Bot Online</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer py-2">
+                <div class="d-flex justify-content-center align-items-center">
+                    <i class="fas fa-circle-question text-muted me-2"></i>
+                    <a href="#" class="text-decoration-none text-muted" data-bs-toggle="modal"
+                       data-bs-target="#howItModal">Bagaimana cara kerjanya?</a>
+                </div>
+            </div>
         </div>
+
 
         @endif
 
@@ -94,7 +122,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-warning shadow h-100 py-2">
                 <div class="card-body">
@@ -218,8 +246,59 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    function updateBotStatus() {
+        fetch("{{ route('check.job.status') }}")
+            .then(response => response.json())
+            .then(data => {
+                const botBox = document.getElementById('botStatusBox');
+                const statusIcon = document.getElementById('status-icon');
+                const statusText = document.getElementById('status-text');
+                const startButton = document.getElementById('startBotBtn');
+
+                if (data.status) {
+                    // Bot Offline - >= 3 jobs
+                    botBox.style.backgroundColor = "#ffe6e6";
+                    statusIcon.classList.remove('text-success');
+                    statusIcon.classList.add('text-danger');
+                    statusText.classList.remove('text-success');
+                    statusText.classList.add('text-danger');
+                    statusText.textContent = "Bot Offline - Dalam Antrian";
+
+                    // Disable tombol
+                    startButton.setAttribute("disabled", true);
+                    startButton.classList.add("btn-secondary");
+                    startButton.classList.remove("btn-primary");
+
+                } else {
+                    // Bot Online - < 3 jobs
+                    botBox.style.backgroundColor = "#e6ffed";
+                    statusIcon.classList.remove('text-danger');
+                    statusIcon.classList.add('text-success');
+                    statusText.classList.remove('text-danger');
+                    statusText.classList.add('text-success');
+                    statusText.textContent = "Bot Online";
+
+                    // Enable tombol
+                    startButton.removeAttribute("disabled");
+                    startButton.classList.add("btn-primary");
+                    startButton.classList.remove("btn-secondary");
+                }
+            })
+            .catch(error => {
+                console.error("Gagal cek status bot:", error);
+            });
+    }
+
+    setInterval(updateBotStatus, 5000);
+    updateBotStatus();
+</script>
+
+<script>
+
     $(document).ready(function(){
+
 
         let countdownInterval = null;
         let progressChecker = null;
@@ -335,7 +414,7 @@
                             progressChecker = setInterval(() => {
                                 if (!isPolling) {
                                     isPolling = true;
-                                    
+
                                     $.ajax({
                                         url: "{{ route('automation.getprogress') }}",
                                         type: "GET",
@@ -343,23 +422,23 @@
                                         timeout: 3000, // timeout setelah 3 detik
                                         success: function(data) {
                                             console.log('Polling result:', data);
-                                            
+
                                             if (data.done === true || data.done === 'true') {
                                                 // Proses selesai, bersihkan semua interval
                                                 if (countdownInterval) {
                                                     clearInterval(countdownInterval);
                                                     countdownInterval = null;
                                                 }
-                                                
+
                                                 clearInterval(progressChecker);
                                                 progressChecker = null;
-                                                
+
                                                 $('#etaText').text('✅ Proses selesai!');
-                                                
+
                                                 // // Opsional: kirim sinyal ke server untuk membersihkan token dari cache
-                                                
+
                                             }
-                                            
+
                                             isPolling = false;
                                         },
                                         error: function() {
@@ -406,8 +485,8 @@
                 processData: false,
                 success: function(response){
                     Swal.fire(
-                        "Berhasil", 
-                        `Bot berhasil input data, silahkan cek ke website target. <br> Jumlah Request: ${response.input_trx}, Jumlah Transaksi Berhasil: ${response.jmlValidNik}`, 
+                        "Berhasil",
+                        `Bot berhasil input data, silahkan cek ke website target. <br> Jumlah Request: ${response.input_trx}, Jumlah Transaksi Berhasil: ${response.jmlValidNik}`,
                         "success");
                     $("#startBotModal").modal('hide');
                     $('#formBotAttr')[0].reset();
@@ -418,7 +497,7 @@
                     if (xhr.status === 422) {
                         Swal.fire("Error!", xhr.responseJSON.message, "error");
                     }
-    
+
                     // Coba ambil pesan dari response backend
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
@@ -450,7 +529,7 @@
 
         //         document.getElementById('statusContainer').style.display = 'flex';
         //         updateEtaText(eta);
-                
+
         //         const countdown = setInterval(() => {
         //             eta--;
         //             updateEtaText(eta);

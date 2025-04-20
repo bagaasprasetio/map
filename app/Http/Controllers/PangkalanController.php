@@ -9,21 +9,33 @@ use Carbon\Carbon;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PangkalanController extends Controller
 {
     public function index(){
-        $data = Pangkalan::where('user_id', Auth::user()->id)->get();
-        $pangkalan = Transaksi::where('user_id', Auth::user()->id)->first();
+        $data           = Pangkalan::where('user_id', Auth::user()->id)->get();
+        $pangkalan      = Transaksi::where('user_id', Auth::user()->id)->first();
         $transactions = 0;
 
         if ($pangkalan){
             $transactions = Transaksi::whereDate('created_at', Carbon::now())
-                                    ->where('pangkalan_id', $pangkalan->pangkalan_id)
-                                    ->count();
+                            ->where('pangkalan_id', $pangkalan->pangkalan_id)
+                            ->count();
         }
-        
+
         return view('index', compact('data', 'transactions'));
+    }
+
+    public function checkJobStatus()
+    {
+        $jobs = DB::table('jobs')->count();
+        $isJobQueueFull = $jobs >= 3;
+
+        return response()->json([
+            'status'    => $isJobQueueFull,
+            'count'     => $jobs
+        ]);
     }
 
     function pangkalanMaster(){
@@ -33,7 +45,7 @@ class PangkalanController extends Controller
     public function getAll(){
         $all = Pangkalan::with('user')->orderBy('created_at', 'desc')->get();
         //return response()->json($all);
-        
+
         return DataTables::of($all)
             ->addIndexColumn()
             ->addColumn('action', function($row) {
@@ -65,7 +77,7 @@ class PangkalanController extends Controller
                 'message' => $validator->errors()
             ], 400);
         }
-        
+
         try {
             Pangkalan::create([
                 'pangkalan_name' => $request->pangkalan_name,

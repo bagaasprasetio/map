@@ -11,7 +11,7 @@ const { cekNik } = require('./pup-nik.cjs');
 
 
     const browser = await login(email, password);
-    await cekNik(browser, nikList, URL, inputTrx, nikType);
+    // await cekNik(browser, nikList, URL, inputTrx, nikType);
 
     await browser.close();
 })();
