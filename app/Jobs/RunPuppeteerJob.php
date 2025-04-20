@@ -15,8 +15,8 @@ class RunPuppeteerJob implements ShouldQueue
 
     public function handle()
     {
-        // $scriptPath = base_path('resources/js/pup-parent.cjs'); // Path ke Puppeteer script
-        $scriptPath = base_path('resources/js/google.cjs'); // Path ke Puppeteer script
+        $scriptPath = base_path('resources/js/pup-parent.cjs'); // Path ke Puppeteer script
+        // $scriptPath = base_path('resources/js/google.cjs'); // Path ke Puppeteer script
 
         $email      = 'rikalikal97@gmail.com';
         $pin        = '232323';

@@ -8,7 +8,6 @@ use App\Http\Controllers\PangkalanController;
 use App\Http\Controllers\OperasionalController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\AutomationController;
-use App\Http\Controllers\PuppeteerController;
 use App\Jobs\RunPuppeteerJob;
 use App\Jobs\SendEmailJob;
 use App\Livewire\Index;
@@ -35,8 +34,6 @@ Route::get('/send-pup', function () {
     return "Job telah dimasukkan ke antrian.";
 });
 
-Route::get('/puppeteer', [PuppeteerController::class, 'index'])->name('puppeteer.index');
-Route::post('/puppeteer/run', [PuppeteerController::class, 'run'])->name('puppeteer.run');
 
 Route::get('/excel', [AutomationController::class, 'index'])->name('pup-index');
 Route::post('/excel', [AutomationController::class, 'upload'])->name('pup-upload');

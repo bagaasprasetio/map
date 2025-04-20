@@ -33,7 +33,7 @@ async function login(email, password) {
             console.log(JSON.stringify({
                 success: false
             }));
-    
+
             return;
         }
     }
