@@ -166,34 +166,30 @@ class AutomationController extends Controller
         }
 
         $scriptPath     = base_path('resources/js/pup-parent.cjs'); // Lokasi script Puppeteer
-        $output = shell_exec("node $scriptPath $email $pin $jsonNikList $nikType $URL $inputTrx 2>&1");
+        $output         = shell_exec("node $scriptPath $email $pin $jsonNikList $nikType $URL $inputTrx 2>&1");
 
-        preg_match('/\{.*\}/s', $output, $matches);
+        preg_match('/(\{(?:[^{}]|(?1))*\})/s', $output, $matches);
         $jsonPart = $matches[0] ?? null;
         $outputArray = json_decode($jsonPart, true);
 
-        //return response()->json(['raw' => $output]);
-
-        // if (!is_array($outputArray) || empty($outputArray['valid_nik'])) {
-        //     return response()->json([
-        //         'message' => 'No valid NIK found'
-        //     ], 400);
-        // }
+        //return dd($outputArray);
 
         // Kasus login gagal (dari Puppeteer)
         if (isset($outputArray['success']) && $outputArray['success'] === false) {
             return response()->json([
                 'success' => false,
-                'message' => $outputArray['error'] ?? 'Terjadi kesalahan saat login bot'
-            ], 400);
+                'error_type' => 'login_error',
+                'message' => 'Terjadi kesalahan saat login ke Merchant Apps MyPertamina (PIN Salah)'
+            ], 422);
         }
 
         // Kasus: login berhasil, tapi nggak ada NIK valid
         if (empty($outputArray['valid_nik'])) {
             return response()->json([
                 'success' => false,
+                'error_type' => 'no_valid_nik',
                 'message' => 'Tidak ada NIK valid yang bisa diproses.'
-            ], 400);
+            ], 422);
         }
 
         $transactions = [];

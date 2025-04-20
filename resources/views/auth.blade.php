@@ -6,7 +6,7 @@
             <!-- <img src="{{ asset('img/subsidi-tepat.webp') }}" style="width: 90px; height: 90px; object-fit: cover;"> -->
              <div class="d-flex align-items-center">
                 <i class="fas fa-robot fa-3x text-gray-400 mb-3"></i>
-                <h5 class="font-weight-bold ml-2">REBOOT APP</h5>
+                <h5 class="font-weight-bold ml-2">MEBOOT APP</h5>
              </div>
         </div>
         <div class="d-flex justify-content-center mt-4">

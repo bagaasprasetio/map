@@ -34,7 +34,7 @@
         </div>
     </div>
 
-    <div class="card shadow mb-4">
+    <!-- <div class="card shadow mb-4">
         <div class="card-header">
             <div class="d-flex justify-content-between">
                 <div>
@@ -88,7 +88,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <script>
         $(document).ready(function(){

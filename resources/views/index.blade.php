@@ -71,7 +71,7 @@
                 <div class="d-flex justify-content-center align-items-center">
                     <i class="fas fa-circle-question fa-1x text-gray-500 mr-2"></i>
                     <a href="#" class="link-underline-primary text-gray-500" data-toggle="modal"
-                        data-target="#howItModal">Bagaimana cara kerjanya?</a>
+                        data-target="#howItModal">Bagaimana caranya?</a>
                 </div>
             </div>
         </div>
@@ -117,6 +117,20 @@
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                 Total User Terdaftar</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $user }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Total Langganan Pangkalan Aktif</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $subs }}</div>
                         </div>
                     </div>
                 </div>
@@ -202,7 +216,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div>
-                    <h5 class="modal-title" id="exampleModalLabel">Informasi cara kerja bot</h5>
+                    <h5 class="modal-title" id="exampleModalLabel">Tutorial menggunakan Bot MAP</h5>
                 </div>
                 <button class="close" type="button" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">×</span>
@@ -224,6 +238,7 @@
         let countdownInterval = null;
         let progressChecker = null;
         let isPolling = false;
+        let processFinished = false;
 
         $.ajaxSetup({
             headers: {
@@ -255,8 +270,6 @@
         $(document).on('click', '#startBotBtn', function(e){
             e.preventDefault();
 
-            //$('#startBotModal').modal('show');
-
             $.ajax({
                 url: "{{ route('pangkalan.check') }}",
                 type: "get",
@@ -274,10 +287,44 @@
             });
         });
 
+        function updateEtaText(eta) {
+            const etaEl = document.getElementById('etaText');
+            if (etaEl) {
+                etaEl.innerText = eta > 0 ? `Estimasi selesai dalam ${eta} detik...` : 'Menunggu konfirmasi...';
+            } else {
+                console.warn('etaText belum ada, mungkin Swal belum muncul?');
+            }
+        }
+
+        function waitForEtaElement(callback, retries = 10) {
+            const etaEl = document.getElementById('etaText');
+            if (etaEl) {
+                callback(etaEl);
+            } else if (retries > 0) {
+                setTimeout(() => waitForEtaElement(callback, retries - 1), 100);
+            } else {
+                console.warn("etaText element not found after retries.");
+            }
+        }
+
         $('#startAutomationBtn').on('click', function(e){
             e.preventDefault();
             let nikType = $("input[name='nik_type']:checked").val();
             let formData = new FormData($('#formBotAttr')[0]);
+
+            Swal.fire({
+                html: `
+                    <div class="d-flex justify-content-center" id="statusContainer" style="display: none;">
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                    <div>Inisiasi bot, mohon tunggu...</div>
+                `,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false
+            });
 
             if (!nikType) {
                 Swal.fire("Error", "Pilih tipe NIK terlebih dahulu", "error");
@@ -292,6 +339,9 @@
             // Hentikan interval sebelumnya jika ada
             if (countdownInterval) clearInterval(countdownInterval);
             if (progressChecker) clearInterval(progressChecker);
+
+            countdownInterval = null;
+            progressChecker = null;
 
             $.ajax({
                 url: "{{ route('automation.check') }}",
@@ -311,70 +361,86 @@
                                 </div>
                             </div>
                             <div>Bot sedang dalam proses menginput data ke server. Mohon untuk TIDAK LOGIN ke akun merchant dan tidak menganggu jalannya bot.</div>
-                            <p id="etaText" class="mt-3"></p>
+                            <div id="etaText" class="mt-3"></div>
                         `,
                         title: "Sedang Memproses",
                         allowOutsideClick: false,
                         allowEscapeKey: false,
                         showConfirmButton: false,
                         didOpen: () => {
-                            updateEtaText(eta);
-                            // clearInterval(countdownInterval);
-                            // clearInterval(progressChecker);
+                            processFinished = false;
 
-                            countdownInterval = setInterval(() => {
-                                eta--;
+                            waitForEtaElement(() => {
                                 updateEtaText(eta);
 
-                                if (eta <= 0) {
-                                    clearInterval(countdownInterval);
-                                    countdownInterval = null;
-                                }
-                            }, 1000);
+                                countdownInterval = setInterval(() => {
+                                    eta--;
+                                    updateEtaText(eta);
 
-                            progressChecker = setInterval(() => {
-                                if (!isPolling) {
-                                    isPolling = true;
+                                    if (eta <= 0) {
+                                        clearInterval(countdownInterval);
+                                        countdownInterval = null;
+                                    }
+                                }, 1000);
+
+                                progressChecker = setInterval(() => {
+                                    if (processFinished || eta <= 0) {
+                                        clearInterval(progressChecker);
+                                        progressChecker = null;
+                                        return;
+                                    }
                                     
-                                    $.ajax({
-                                        url: "{{ route('automation.getprogress') }}",
-                                        type: "GET",
-                                        data: { token },
-                                        timeout: 3000, // timeout setelah 3 detik
-                                        success: function(data) {
-                                            console.log('Polling result:', data);
-                                            
-                                            if (data.done === true || data.done === 'true') {
-                                                // Proses selesai, bersihkan semua interval
-                                                if (countdownInterval) {
-                                                    clearInterval(countdownInterval);
-                                                    countdownInterval = null;
+                                    if (!isPolling) {
+                                        console.log('Polling aktif...');
+                                        isPolling = true;
+
+                                        $.ajax({
+                                            url: "{{ route('automation.getprogress') }}",
+                                            type: "GET",
+                                            data: { token },
+                                            timeout: 3000,
+                                            success: function(data) {
+                                                console.log('Polling result:', data);
+
+                                                if (String(data.done) === 'true') {
+                                                    console.log('✅ Proses selesai terdeteksi. Stop polling dan countdown.');
+
+                                                    // Clear all interval
+                                                    if (countdownInterval) {
+                                                        clearInterval(countdownInterval);
+                                                        countdownInterval = null;
+                                                    }
+
+                                                    if (progressChecker) {
+                                                        clearInterval(progressChecker);
+                                                        progressChecker = null;
+                                                    }
+
+                                                    // Force set flag biar gak bisa polling lagi
+                                                    eta = 0;
+                                                    processFinished = true;
+                                                    isPolling = false;
+
+                                                    $('#etaText').text('✅ Proses selesai!');
                                                 }
-                                                
-                                                clearInterval(progressChecker);
-                                                progressChecker = null;
-                                                
-                                                $('#etaText').text('✅ Proses selesai!');
-                                                
-                                                // // Opsional: kirim sinyal ke server untuk membersihkan token dari cache
-                                                
+
+                                                isPolling = false;
+                                            },
+                                            error: function() {
+                                                isPolling = false;
                                             }
-                                            
-                                            isPolling = false;
-                                        },
-                                        error: function() {
-                                            // Pastikan isPolling di-reset meskipun terjadi error
-                                            isPolling = false;
-                                        }
-                                    });
-                                }
-                            }, 5000);
+                                        });
+                                    }
+                                }, 1000);
+                            });
                         }
                     });
 
                     executeBot(formData);
                 },
                 error: function(xhr){
+                    Swal.close();
+                    
                     if (xhr.status === 400){
                         let errors = xhr.responseJSON.message;
 
@@ -392,10 +458,6 @@
                 }
             });
         });
-
-        function updateEtaText(eta) {
-            document.getElementById('etaText').innerText = eta > 0 ? `Estimasi selesai dalam ${eta} detik...` : 'Menunggu konfirmasi...';
-        }
 
         function executeBot(formData){
             $.ajax({
@@ -416,7 +478,24 @@
                     let errorMessage = "Terjadi kesalahan saat menjalankan bot.";
 
                     if (xhr.status === 422) {
+                        const type = xhr.responseJSON?.error_type;
+
+                        // Kasus login salah
+                        if (type === 'login_error') {
+                            Swal.fire("Login Gagal!", xhr.responseJSON.message, "error");
+                            return;
+                        }
+
+                        // Kasus NIK kosong
+                        if (type === 'no_valid_nik') {
+                            Swal.fire("NIK Tidak Valid!", xhr.responseJSON.message, "warning");
+                            return;
+                        }
+
+                        // Default handler kalo error_type ga kebaca
                         Swal.fire("Error!", xhr.responseJSON.message, "error");
+                        return;
+
                     }
     
                     // Coba ambil pesan dari response backend
