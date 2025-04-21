@@ -246,15 +246,15 @@
                 <div>
                     <h5 class="modal-title" id="exampleModalLabel">Tutorial menggunakan Bot MAP</h5>
                 </div>
-                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                <button class="close" type="button" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">×</span>
                 </button>
             </div>
             <div class="modal-body">
-                <p>Lorem ipsum</p>
+                <img src="img/tutor.png" class="w-100">
             </div>
             <div class="modal-footer">
-                <button class="btn btn-outline" type="button" data-dismiss="modal">Close</button>
+                <button class="btn btn-outline" type="button" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
